@@ -279,12 +279,12 @@ document.addEventListener('DOMContentLoaded', function(){
     if(tabGoal) tabGoal.addEventListener('click', function(){ activateTab('goal'); });
 
     /* ---------- presets ---------- */
-    var presets = {
-      conservative: {lc:60, mc:25, sc:10, gold:5},
-      balanced:     {lc:45, mc:30, sc:15, gold:10},
-      aggressive:   {lc:30, mc:40, sc:25, gold:5},
-      moreAggressive:{lc:20, mc:45, sc:30, gold:5}
-    };
+var presets = {
+  conservative: {lc:60, mc:25, sc:10, gold:5},
+  balanced: {lc:45, mc:30, sc:15, gold:10},
+  aggressive: {lc:30, mc:40, sc:25, gold:5},
+  moreAggressive: {lc:20, mc:45, sc:30, gold:5}
+};
 
     function applyPreset(name){
       var p = presets[name];

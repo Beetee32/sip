@@ -404,50 +404,50 @@ fvChart = new Chart(fCtx, {
 });
 
 // compare chart
-if (compareState) {
-  var container = $id('compareChartContainer');
-  container.innerHTML = '<canvas id="compareChart" height="220"></canvas>';
-  var cCtx = $id('compareChart').getContext('2d');
-  
-  if (compareChart) compareChart.destroy();
-  
-  compareChart = new Chart(cCtx, {
-    type: 'bar',
-    data: {
-      labels: ['Large', 'Mid', 'Small', 'Gold'],
-      datasets: [
-        { label: 'Current',     data: [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc, state.outputs.fv_gold], backgroundColor: '#0b74de' },
-        { label: 'Comparison',  data: [compareState.outputs.fv_lc, compareState.outputs.fv_mc, compareState.outputs.fv_sc, compareState.outputs.fv_gold], backgroundColor: '#ff7a59' }
-      ]
-    },
-    options: {
-      plugins: {
-        legend: { position: 'bottom' },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) { return indianFormat(ctx.raw); }
-          }
-        }
+try {
+  if (compareState) {
+    var container = $id('compareChartContainer');
+    container.innerHTML = '<canvas id="compareChart" height="220"></canvas>';
+    var cCtx = $id('compareChart').getContext('2d');
+
+    if (compareChart) compareChart.destroy();
+
+    compareChart = new Chart(cCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Large', 'Mid', 'Small', 'Gold'],
+        datasets: [
+          { label: 'Current',    data: [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc, state.outputs.fv_gold], backgroundColor: '#0b74de' },
+          { label: 'Comparison', data: [compareState.outputs.fv_lc, compareState.outputs.fv_mc, compareState.outputs.fv_sc, compareState.outputs.fv_gold], backgroundColor: '#ff7a59' }
+        ]
       },
-      scales: {
-        y: {
-          ticks: {
-            callback: function(v) {
-              return v >= 100000 ? (v / 100000).toFixed(1) + 'L' : v;
+      options: {
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) { return indianFormat(ctx.raw); }
+            }
+          }
+        },
+        scales: {
+          y: {
+            ticks: {
+              callback: function(v) {
+                return v >= 100000 ? (v / 100000).toFixed(1) + 'L' : v;
+              }
             }
           }
         }
       }
-    }
-  });
-}
-      } else {
-        $('compareChartContainer').innerHTML = '';
-      }
-    } catch (e) {
-      safeLog('chart error', e);
-    }
+    });
+  } else {
+    var container = $id('compareChartContainer');
+    if (container) container.innerHTML = '';
   }
+} catch (e) {
+  safeLog('Compare chart error', e);
+}
 
   // render planner and comparison UI
   function renderPlanner() {

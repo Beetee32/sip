@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Simple SIP Planner — The One That Converts</title>
+<title>SIP Planner – The One That Actually Converts</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  :root{--bg:#f8fafc;--card:#fff;--accent:#0d9488;--accent2:#0f766e;--muted:#64748b;--success:#16a34a;--danger:#dc2626;--warn:#d97706;--gold:#ca8a04}
+  :root{--bg:#f8fafc;--card:#fff;--accent:#0d9488;--muted:#64748b;--success:#16a34a;--danger:#dc2626;--gold:#ca8a04}
   *{box-sizing:border-box}
   body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;padding:20px 16px;color:#1e293b;line-height:1.6}
   .wrap{max-width:1100px;margin:0 auto}
@@ -17,40 +17,37 @@
   .card{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
   label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
-  input[type=number],select{width:100%;padding:12px;border-radius:10px;border:1px solid #cbd5e1;font-size:15px}
+  input[type=number],select,radio{width:100%;padding:12px;border-radius:10px;border:1px solid #cbd5e1;font-size:15px}
   .controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;align-items:center}
-  .btn{padding:12px 20px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:15px;transition:all .2s}
+  .btn{padding:14px 24px;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:16px;transition:all .2s}
   .btn.primary{background:var(--accent);color:#fff}
-  .btn.ghost{background:transparent;border:1px solid #94a3b8;color:#475569}
+  .btn.big{background:#25D366;color:#fff;font-size:18px;padding:18px 32px;border-radius:16px;box-shadow:0 8px 25px rgba(37,211,102,0.3)}
   .panel{background:#f0fdfa;border-radius:14px;padding:20px;border:1px solid #ccfbf1;margin-top:20px}
-  .kpi{font-size:28px;font-weight:900;color:var(--accent2)}
-  .big{font-size:36px;font-weight:900;color:var(--accent)}
+  .kpi{font-size:32px;font-weight:900;color:var(--accent)}
+  .big{font-size:40px;font-weight:900;color:var(--accent)}
   .muted{color:var(--muted);font-size:14px}
   .segmented{display:inline-flex;border-radius:12px;overflow:hidden;border:1px solid #cbd5e1}
-  .segmented button{background:#fff;padding:10px 18px;cursor:pointer;font-weight:600;transition:all .2s}
+  .segmented button{background:#fff;padding:10px 18px;cursor:pointer;font-weight:600}
   .segmented button.active{background:var(--accent);color:#fff}
-  .charts{margin-top:20px}
-  .chart-panel{background:#fff;border-radius:14px;padding:20px;box-shadow:0 4px 16px rgba(0,0,0,0.06)}
-  .whatsapp{position:fixed;right:16px;bottom:16px;background:#25D366;color:#fff;padding:16px;border-radius:50px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);text-decoration:none;font-weight:700;z-index:999;font-size:16px}
+  .topbar{background:#fff;border-radius:12px;padding:16px;margin:20px 0;box-shadow:0 4px 15px rgba(0,0,0,0.08);display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+  .whatsapp{position:fixed;right:16px;bottom:16px;z-index:999}
   .highlight{background:#fffbeb;border:1px solid #fde68a;padding:16px;border-radius:12px;margin:16px 0}
-  .danger{color:#dc2626;font-weight:700}
-  .success{color:var(--success);font-weight:700}
-  .goal-banner{background:#fef3c7;border:1px solid #f59e0b;padding:16px;border-radius:12px;margin:16px 0;font-weight:600}
+  .fd-box{background:#fef2f2;border:1px solid #fca5a5;padding:20px;border-radius:12px}
+  .emergency{background:#ecfdf5;border:1px solid #86efac;padding:16px;border-radius:12px}
+  .emergency.red{background:#fef2f2;border-color:#fca5a5}
   @media(min-width:768px){.grid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}}
 </style>
 </head>
 <body>
-<a class="whatsapp" href="https://wa.me/917666123827" target="_blank" rel="noopener">Chat on WhatsApp</a>
-
 <div class="wrap">
   <div class="header">
     <div>
-      <h1>Simple SIP Planner</h1>
-      <div class="sub">See your ₹40,000 become ₹4 Crore</div>
+      <h1>SIP Planner</h1>
+      <div class="sub">Watch ₹50,000 become ₹5+ Crore</div>
     </div>
     <div style="display:flex;gap:12px">
       <button id="downloadBtn" class="btn primary">Download Excel</button>
-      <button id="resetBtn" class="btn ghost">Reset</button>
+      <button id="resetBtn" class="btn" style="border:1px solid #94a3b8">Reset</button>
     </div>
   </div>
 
@@ -62,17 +59,37 @@
 
     <!-- Planner -->
     <div id="panePlanner">
+      <div style="margin-bottom:16px">
+        <label>Who is investing?</label>
+        <div style="display:flex;gap:20px">
+          <label><input type="radio" name="person" value="single" checked> Single person</label>
+          <label><input type="radio" name="person" value="couple"> Couple</label>
+        </div>
+      </div>
+
       <div class="grid">
-        <div><label>Husband monthly income (₹)</label><input id="husband" type="number" value="100000"></div>
-        <div><label>Wife monthly income (₹)</label><input id="wife" type="number" value="100000"></div>
-        <div><label>Household expenses (₹)</label><input id="house" type="number" value="60000"></div>
-        <div><label>EMI (₹)</label><input id="emi" type="number" value="20000"></div>
-        <div><label>Misc expenses (₹)</label><input id="misc" type="number" value="20000"></div>
+        <div id="ageSingle"><label>Your Age</label><input id="age1" type="number" value="35"></div>
+        <div id="ageHusband" style="display:none"><label>Husband Age</label><input id="ageH" type="number" value="38"></div>
+        <div id="ageWife" style="display:none"><label>Wife Age</label><input id="ageW" type="number" value="35"></div>
+
+        <div><label>Monthly Income (₹)</label><input id="income" type="number" value="200000"></div>
+        <div><label>Monthly Expenses (₹)</label><input id="expense" type="number" value="100000"></div>
       </div>
 
       <hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0">
 
-      <div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:end">
+      <div style="background:#f0f9ff;padding:16px;border-radius:12px">
+        <label>How do you want to set SIP amount?</label>
+        <div style="display:flex;gap:20px;margin:12px 0">
+          <label><input type="radio" name="sipMode" value="auto" checked> Auto (from surplus)</label>
+          <label><input type="radio" name="sipMode" value="manual"> Manual amount</label>
+        </div>
+        <div id="manualSIP" style="display:none;margin-top:12px">
+          <label>I want to invest ₹ <input id="manualAmount" type="number" value="50000" style="width:150px;display:inline-block"> per month</label>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:end;margin-top:20px">
         <div>
           <div style="margin-bottom:8px;font-weight:700">Risk Profile</div>
           <div class="segmented">
@@ -82,127 +99,102 @@
           </div>
         </div>
         <div style="min-width:320px">
-          <label Allocation (Large • Mid • Small %)</label>
+          <label>Allocation (Large • Mid • Small %)</label>
           <div style="display:flex;gap:8px">
-            <input id="lc" type="number" value="45" min="0" max="100">
-            <input id="mc" type="number" value="30" min="0" max="100">
-            <input id="sc" type="number" value="25" min="0" max="100">
+            <input id="lc" type="number" value="45"><input id="mc" type="number" value="30"><input id="sc" type="number" value="25">
           </div>
-          <div class="muted" style="margin-top:6px;text-align:center">Large • Mid • Small</div>
         </div>
       </div>
 
       <div class="controls">
         <div><label>Time Horizon</label>
           <select id="years">
-            <option value="3">3 years</option>
-            <option value="6">6 years</option>
-            <option value="9">9 years</option>
-            <option value="12">12 years</option>
-            <option value="15" selected>15 years</option>
-            <option value="18">18 years</option>
-            <option value="21">21 years</option>
-            <option value="24">24 years</option>
-            <option value="27">27 years</option>
-            <option value="30">30 years</option>
+            <option value="3">3 years</option><option value="6">6 years</option><option value="9">9 years</option>
+            <option value="12">12 years</option><option value="15" selected>15 years</option><option value="18">18 years</option>
+            <option value="21">21 years</option><option value="24">24 years</option><option value="27">27 years</option><option value="30">30 years</option>
           </select>
         </div>
-        <div><label>Large cap CAGR %</label><input id="lc_r" type="number" value="9" step="0.5"></div>
-        <div><label>Mid cap CAGR %</label><input id="mc_r" type="number" value="12" step="0.5"></div>
-        <div><label>Small cap CAGR %</label><input id="sc_r" type="number" value="16" step="0.5"></div>
-        <div style="margin-left:auto;display:flex;gap:12px;align-items:center">
-          <div id="allocWarning" class="muted"></div>
-          <button id="calc" class="btn primary">Calculate My Future</button>
-        </div>
+        <div><label>Large cap %</label><input id="lc_r" type="number" value="9" step="0.5"></div>
+        <div><label>Mid cap %</label><input id="mc_r" type="number" value="12" step="0.5"></div>
+        <div><label>Small cap %</label><input id="sc_r" type="number" value="16" step="0.5"></div>
+        <button id="calc" class="btn primary">Show My Future</button>
       </div>
 
-      <div id="goalOverrideBanner" class="goal-banner" style="display:none"></div>
+      <!-- Results Start Here -->
+      <div id="results" style="display:none">
 
-      <!-- Money Story -->
-      <div id="moneyStory" class="panel" style="display:none;text-align:center">
-        <h2 style="margin:0 0 16px;font-size:28px">Your Money Story</h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;max-width:600px;margin:0 auto">
-          <div>
-            <div class="muted">You will invest</div>
-            <div class="kpi" id="totalInvested">₹72 Lakh</div>
+        <!-- Top Summary -->
+        <div class="topbar">
+          <div><div class="muted">Total Income</div><div class="kpi" id="topIncome">₹2 L</div></div>
+          <div><div class="muted">Total Expense</div><div class="kpi" id="topExpense">₹1 L</div></div>
+          <div><div class="muted">Money in SIP</div><div class="kpi" id="topSIP">₹1 L</div></div>
+        </div>
+
+        <!-- Money Story -->
+        <div class="panel" style="text-align:center">
+          <h2>Your Money Story</h2>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;max-width:600px;margin:0 auto">
+            <div><div class="muted">You invest</div><div class="kpi" id="totalInvested">₹1.8 Cr</div></div>
+            <div><div class="muted">Becomes</div><div class="big" id="finalCorpus">₹5.6 Cr</div></div>
           </div>
-          <div>
-            <div class="muted">It will grow to</div>
-            <div class="big" id="finalCorpus">₹4.8 Crore</div>
+          <div style="margin:24px 0;font-size:48px">→</div>
+          <div class="highlight">
+            <div class="muted">Wealth created</div>
+            <div class="big" style="color:#16a34a" id="wealthCreated">₹3.8 Cr</div>
+            <div style="font-size:24px;margin-top:8px" id="multiplier">6.1× your money 🚀</div>
           </div>
         </div>
-        <div style="margin:24px 0;font-size:48px">→</div>
-        <div class="highlight">
-          <div class="muted">Wealth created for you</div>
-          <div class="big" style="color:#16a34a" id="wealthCreated">₹4.1 Crore</div>
-          <div style="font-size:24px;margin-top:8px" id="multiplier">That’s <strong>6.7×</strong> your money 🚀</div>
+
+        <!-- Add 5k Slider -->
+        <div class="panel">
+          <label>What if you add just ₹5,000 more per month?</label>
+          <input type="range" id="extraSIP" min="0" max="20000" step="1000" value="0" style="width:100%">
+          <div style="text-align:center;font-size:20px;margin-top:12px">
+            Extra ₹<span id="extraAmount">0</span>k/month → +<span id="extraCorpus">₹0</span> in final corpus
+          </div>
         </div>
-        <div style="margin-top:20px;font-size:18px" id="salaryOvertake"></div>
-      </div>
 
-      <!-- Delay Cost -->
-      <div id="delayCost" class="highlight" style="display:none">
-        <strong class="danger">If you delay starting by 5 years → you lose <span id="lostAmount">₹2.3 Crore</span> forever</strong>
-      </div>
-
-      <!-- Beat 95% -->
-      <div class="panel" id="beat95" style="display:none;background:#fefce8">
-        <strong>95% of Indians never cross ₹50 Lakh corpus.</strong><br>
-        You are building <span id="beatAmount">₹4+ Crore</span>. You’re in the top 5%.
-      </div>
-
-      <!-- Real Goals -->
-      <div class="panel" id="realGoals" style="display:none">
-        <h3>Your Real-Life Goals — Covered?</h3>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
-          <div class="highlight">Child’s IIT + MBA (2040) → ~₹1.2 Cr today → <span class="success">Covered</span></div>
-          <div class="highlight">Retirement corpus (2055) → ₹15 Cr+ → <span class="success">Covered + ₹3 L/month passive</span></div>
-          <div class="highlight">Dream home down-payment → <span class="success">Covered</span></div>
+        <!-- FD vs Equity -->
+        <div class="fd-box">
+          <strong>Fixed Deposit @7% after tax → ₹2.1 Cr</strong><br>
+          <strong>Equity @12% → ₹5.6 Cr</strong><br>
+          <span class="danger">By choosing FD, you lose ₹3.5 Cr — that’s a 3BHK in a good city.</span>
         </div>
-      </div>
 
-      <!-- Compare -->
-      <div class="panel">
-        <h3 style="margin:0 0 16px">Compare Risk Profiles</h3>
-        <div id="compareCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px"></div>
-      </div>
+        <!-- SWP -->
+        <div class="panel">
+          <h3>Passive Income (SWP)</h3>
+          <div class="kpi">₹<span id="swpMonthly">1.8 Lakh</span>/month for <span id="swpYears">35+ years</span> (4% safe withdrawal)</div>
+        </div>
 
-      <!-- Chart -->
-      <div class="charts">
-        <div class="chart-panel">
-          <h3 style="margin:0 0 16px">Your Wealth Growth Over Time</h3>
+        <!-- Inflation Goals -->
+        <div class="panel">
+          <h3>Future Costs (6% inflation)</h3>
+          <div class="grid">
+            <div>Child Education (2040) → ₹1.4 Cr</div>
+            <div>Child Marriage (2045) → ₹85 Lakh</div>
+            <div>Retirement need (2055) → ₹3.5 L/month</div>
+          </div>
+        </div>
+
+        <!-- Emergency Fund -->
+        <div id="emergencyBox" class="emergency">Checking emergency fund...</div>
+
+        <!-- Talk on WhatsApp -->
+        <div style="text-align:center;margin:32px 0">
+          <a href="#" id="talkWA" class="btn big">Talk on WhatsApp → Start My SIP</a>
+        </div>
+
+        <!-- Chart -->
+        <div class="panel">
+          <h3>Wealth Growth Over Time</h3>
           <canvas id="growthChart"></canvas>
         </div>
       </div>
     </div>
 
-    <!-- Goal Planner Tab -->
-    <div id="paneGoal" style="display:none">
-      <div class="grid">
-        <div><label>Target Corpus (₹)</label><input id="target" type="number" value="100000000"></div>
-        <div><label>Years to reach</label><input id="goalYears" type="number" value="18"></div>
-        <div><label>Expected CAGR %</label><input id="goalCagr" type="number" value="12" step="0.5"></div>
-        <div><label>Inflation % (annual)</label><input id="goalInfl" type="number" value="6" step="0.5"></div>
-      </div>
-      <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap">
-        <button id="calcGoal" class="btn primary">Calculate Required SIP</button>
-        <button id="applyGoalToPlanner" class="btn ghost">Apply to Planner →</button>
-        <button id="useActualIncome" class="btn" style="display:none">Use actual income</button>
-      </div>
-      <div id="goalResult" class="panel" style="margin-top:20px"></div>
-    </div>
-
-    <!-- Golden Rules -->
-    <div class="panel">
-      <h3>Golden Rules of Wealth</h3>
-      <ul style="margin:0;padding-left:20px;color:#475569">
-        <li>Start today — time is the only thing money cannot buy</li>
-        <li>₹1 invested at 25 becomes ₹88 at 60. ₹1 at 35 becomes only ₹15.</li>
-        <li>Never break equity SIPs — volatility is your friend</li>
-        <li>Rebalance once a year, ignore daily noise</li>
-        <li>A written plan beats willpower every time</li>
-      </ul>
-    </div>
+    <!-- Goal Tab (hidden for now) -->
+    <div id="paneGoal" style="display:none">Goal planner coming soon</div>
   </div>
 </div>
 
@@ -221,190 +213,92 @@ document.addEventListener('DOMContentLoaded', () => {
   const fvSIP = (m, r, y) => {
     if (!m) return 0;
     const i = r/100/12, n = y*12;
-    if (Math.abs(i) < 1e-12) return m*n;
-    return m * ((Math.pow(1+i,n)-1)/i) * (1+i);
+    return i === 0 ? m*n : m * ((Math.pow(1+i,n)-1)/i) * (1+i);
   };
 
-  const reqSIP = (fv, cagr, y) => {
-    const i = cagr/100/12, n = y*12;
-    if (n <= 0) return 0;
-    if (Math.abs(i) < 1e-12) return fv/n;
-    return fv * i / ((Math.pow(1+i,n)-1)*(1+i));
-  };
+  const presets = {conservative:{lc:50,mc:30,sc:20}, balanced:{lc:45,mc:30,sc:25}, aggressive:{lc:35,mc:35,sc:30}};
 
-  const presets = {
-    conservative: {name:"Conservative", lc:50, mc:30, sc:20},
-    balanced:     {name:"Balanced",     lc:45, mc:30, sc:25},
-    aggressive:   {name:"Aggressive",   lc:35, mc:35, sc:30}
-  };
+  let chart = null;
 
-  let growthChart = null;
-  let lastRequiredSIP = null;
+  const calculate = () => {
+    const income = +$('income').value;
+    const expense = +$('expense').value;
+    const years = +$('years').value;
+    const lc_r = +$('lc_r').value, mc_r = +$('mc_r').value, sc_r = +$('sc_r').value;
+    const lc = +$('lc').value, mc = +$('mc').value, sc = +$('sc').value;
+    const extra = +$('extraSIP').value;
 
-  const validateAlloc = () => {
-    const sum = (+$('lc')?.value || 0) + (+$('mc')?.value || 0) + (+$('sc')?.value || 0);
-    const warn = $('allocWarning');
-    if (sum !== 100) {
-      warn.innerHTML = `<span style="color:#d97706">Allocation ${sum}% (must be 100%)</span>`;
-      return false;
-    }
-    warn.innerHTML = '<span style="color:#16a34a">100% ✓</span>';
-    return true;
-  };
+    let sip = income - expense;
+    if ($('sipMode_manual')?.checked) sip = +$('manualAmount').value;
+    sip += extra;
 
-  ['lc','mc','sc'].forEach(id => $(id)?.addEventListener('input', validateAlloc));
+    const avgRate = (lc*lc_r + mc*mc_r + sc*sc_r)/100;
+    const totalInvested = sip * 12 * years;
+    const corpus = fvSIP(sip, avgRate, years);
+    const wealth = corpus - totalInvested;
 
-  const getState = () => {
-    const inc = (+$('husband')?.value || 0) + (+$('wife')?.value || 0);
-    const exp = (+$('house')?.value || 0) + (+$('emi')?.value || 0) + (+$('misc')?.value || 0);
-    const actual = Math.max(0, inc - exp);
-    const investable = lastRequiredSIP ?? actual;
-    const y = +($('years')?.value || 15);
-    const rates = {lc: +($('lc_r')?.value || 9), mc: +($('mc_r')?.value || 12), sc: +($('sc_r')?.value || 16)};
-    const alloc = {lc: +($('lc')?.value || 45), mc: +($('mc')?.value || 30), sc: +($('sc')?.value || 25)};
-    const sip = {
-      lc: investable * alloc.lc/100,
-      mc: investable * alloc.mc/100,
-      sc: investable * alloc.sc/100
-    };
-    const fv = {
-      lc: fvSIP(sip.lc, rates.lc, y),
-      mc: fvSIP(sip.mc, rates.mc, y),
-      sc: fvSIP(sip.sc, rates.sc, y)
-    };
-    fv.total = fv.lc + fv.mc + fv.sc;
-    return {inc, exp, actual, investable, sip, fv, y, rates, alloc};
-  };
-
-  const renderAll = () => {
-    if (!validateAlloc()) return;
-    const s = getState();
-
-    // Money Story
-    const totalInvested = s.investable * 12 * s.y;
-    const wealthCreated = s.fv.total - totalInvested;
-    const multiplier = (s.fv.total / totalInvested).toFixed(1);
-    const annualSalary = s.inc * 12;
-    let overtakeYear = 0;
-    for (let yr = 1; yr <= s.y; yr++) {
-      const temp = fvSIP(s.investable * s.alloc.lc/100, s.rates.lc, yr) +
-                   fvSIP(s.investable * s.alloc.mc/100, s.rates.mc, yr) +
-                   fvSIP(s.investable * s.alloc.sc/100, s.rates.sc, yr);
-      if (temp >= annualSalary) { overtakeYear = yr; break; }
-    }
-
+    // Update UI
+    $('topIncome').textContent = fmt(income);
+    $('topExpense').textContent = fmt(expense);
+    $('topSIP').textContent = fmt(sip);
     $('totalInvested').textContent = fmt(totalInvested);
-    $('finalCorpus').textContent = fmt(s.fv.total);
-    $('wealthCreated').textContent = fmt(wealthCreated);
-    $('multiplier').innerHTML = `That’s <strong>${multiplier}×</strong> your money 🚀`;
-    $('salaryOvertake').textContent = overtakeYear ? `Your monthly SIP will overtake your current annual salary in just ${overtakeYear} years.` : '';
+    $('finalCorpus').textContent = fmt(corpus);
+    $('wealthCreated').textContent = fmt(wealth);
+    $('multiplier').textContent = (corpus/totalInvested).toFixed(1) + "× your money 🚀";
+    $('extraAmount').textContent = extra/1000;
+    $('extraCorpus').textContent = fmt(fvSIP(extra, avgRate, years));
+    $('swpMonthly').textContent = Math.round(corpus * 0.04 / 12 / 100000) + " Lakh";
+    $('talkWA').href = `https://wa.me/917666123827?text=Hi! I can invest ₹${sip.toLocaleString('en-IN')}/month for ${years} years. Please help me start my SIP today.`;
 
-    // Delay cost
-    const delayFV = fvSIP(s.investable, (s.rates.lc*0.5 + s.rates.mc*0.3 + s.rates.sc*0.2), s.y - 5);
-    $('lostAmount').textContent = fmt(s.fv.total - delayFV);
-
-    // Beat 95%
-    $('beatAmount').textContent = fmt(s.fv.total);
-
-    ['moneyStory','delayCost','beat95','realGoals'].forEach(id => $(id).style.display = 'block');
-
-    // Compare cards
-    let cards = '';
-    Object.values(presets).forEach(p => {
-      const fvTotal = fvSIP(s.investable * p.lc/100, s.rates.lc, s.y) +
-                      fvSIP(s.investable * p.mc/100, s.rates.mc, s.y) +
-                      fvSIP(s.investable * p.sc/100, s.rates.sc, s.y);
-      const active = p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc;
-      cards += `<div class="panel" style="border:${active?'4px solid #0d9488':'1px solid #e2e8f0'};background:${active?'#f0fdfa':'#fff'}">
-        <strong>${p.name}</strong><br>
-        <small>L:${p.lc}% M:${p.mc}% S:${p.sc}%</small><br>
-        <div class="kpi">${fmt(fvTotal)}</div>
-      </div>`;
-    });
-    $('compareCards').innerHTML = cards;
+    // Emergency fund
+    const needed = expense * 9;
+    $('emergencyBox').textContent = sip >= needed/12/2 ? "Emergency fund: Covered ✓" : "Build emergency fund first (6–12 months expenses needed)";
+    $('emergencyBox').className = sip >= needed/12/2 ? "emergency" : "emergency red";
 
     // Chart
-    if (growthChart) growthChart.destroy();
-    const labels = Array.from({length: s.y + 1}, (_, i) => i === 0 ? 'Start' : `Year ${i}`);
-    const data = labels.map((_, i) => i === 0 ? 0 : fvSIP(s.investable, (s.rates.lc*s.alloc.lc/100 + s.rates.mc*s.alloc.mc/100 + s.rates.sc*s.alloc.sc/100), i));
-    growthChart = new Chart($('growthChart'), {
-      type: 'line',
-      data: {labels, datasets: [{label: 'Your Wealth', data, borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,0.1)', fill: true, tension: 0.4}]},
-      options: {
-        plugins: {tooltip: {callbacks: {label: ctx => fmt(ctx.raw)}}},
-        scales: {y: {ticks: {callback: v => v >= 1e7 ? (v/1e7).toFixed(1)+' Cr' : (v/1e5).toFixed(1)+' L'}}}
-      }
+    if (chart) chart.destroy();
+    const labels = Array.from({length: years+1}, (_,i) => i===0 ? "Now" : `Year ${i}`);
+    const data = labels.map((_,i) => i===0 ? 0 : fvSIP(sip, avgRate, i));
+    chart = new Chart($('growthChart'), {
+      type:'line', data:{labels, datasets:[{label:'Your Wealth', data, borderColor:'#0d9488', backgroundColor:'rgba(13,148,136,0.1)', fill:true, tension:0.4}]},
+      options:{plugins:{tooltip:{callbacks:{label:c=>fmt(c.raw)}}}, scales:{y:{ticks:{callback:v=>v>=1e7?(v/1e7).toFixed(1)+' Cr':(v/1e5).toFixed(1)+' L'}}}}
     });
 
-    // Goal banner
-    if (lastRequiredSIP) {
-      $('goalOverrideBanner').style.display = 'block';
-      $('goalOverrideBanner').innerHTML = `Goal Mode ON: Using <strong>${fmt(lastRequiredSIP)}</strong>/month to reach your target`;
-    } else {
-      $('goalOverrideBanner').style.display = 'none';
-    }
+    $('results').style.display = 'block';
   };
 
+  // Event Listeners
+  $('calc').onclick = calculate;
+  $('extraSIP').oninput = calculate;
+  document.querySelectorAll('[name="sipMode"]').forEach(r => r.onchange = () => {
+    $('manualSIP').style.display = r.value === 'manual' ? 'block' : 'none';
+    calculate();
+  });
+  document.querySelectorAll('[name="person"]').forEach(r => r.onchange = () => {
+    const couple = r.value === 'couple';
+    $('ageSingle').style.display = couple ? 'none' : 'block';
+    $('ageHusband').style.display = couple ? 'block' : 'none';
+    $('ageWife').style.display = couple ? 'block' : 'none';
+  });
+
+  // Presets
   const applyPreset = name => {
     const p = presets[name];
-    if (!p) return;
     $('lc').value = p.lc; $('mc').value = p.mc; $('sc').value = p.sc;
-    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-    const btn = $(`preset${name.charAt(0).toUpperCase() + name.slice(1)}`);
-    if (btn) btn.classList.add('active');
-    validateAlloc();
-    renderAll();
+    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+    $(`preset${name.charAt(0).toUpperCase()+name.slice(1)}`)?.classList.add('active');
+    calculate();
   };
+  $('presetCons').onclick = () => applyPreset('conservative');
+  $('presetBal').onclick = () => applyPreset('balanced');
+  $('presetAgg').onclick = () => applyPreset('aggressive');
 
-  const on = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
+  // Tabs
+  $('tabPlanner').onclick = () => { $('panePlanner').style.display = ''; $('paneGoal').style.display = 'none'; };
+  $('tabGoal').onclick = () => { $('panePlanner').style.display = 'none'; $('paneGoal').style.display = ''; };
 
-  on('tabPlanner', () => { $('panePlanner').style.display = ''; $('paneGoal').style.display = 'none'; });
-  on('tabGoal', () => { $('panePlanner').style.display = 'none'; $('paneGoal').style.display = ''; });
-  on('presetCons', () => applyPreset('conservative'));
-  on('presetBal', () => applyPreset('balanced'));
-  on('presetAgg', () => applyPreset('aggressive'));
-  on('calc', renderAll);
-  on('calcGoal', () => {
-    const target = +$('target').value;
-    const y = +$('goalYears').value;
-    const cagr = +$('goalCagr').value;
-    const required = reqSIP(target, cagr, y);
-    const today = target / Math.pow(1.06, y);
-    $('goalResult').innerHTML = `<div style="font-size:22px;font-weight:900">Required SIP: ${fmt(required)}</div>
-      <div>Goal in today's money: ${fmt(today)}</div>`;
-    lastRequiredSIP = required;
-  });
-  on('applyGoalToPlanner', () => {
-    if (!lastRequiredSIP) return alert("Calculate goal first");
-    $('useActualIncome').style.display = 'inline-block';
-    renderAll();
-    $('tabPlanner').click();
-  });
-  on('useActualIncome', () => { lastRequiredSIP = null; $('useActualIncome').style.display = 'none'; renderAll(); });
-  on('resetBtn', () => {
-    const def = {husband:100000,wife:100000,house:60000,emi:20000,misc:20000,lc:45,mc:30,sc:25,lc_r:9,mc_r:12,sc_r:16,years:15};
-    Object.keys(def).forEach(k => { const el = $(k); if (el) el.value = def[k]; });
-    lastRequiredSIP = null;
-    $('useActualIncome').style.display = 'none';
-    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-    $('presetBal').classList.add('active');
-    validateAlloc();
-    renderAll();
-  });
-  on('downloadBtn', () => {
-    const s = getState();
-    const ws = XLSX.utils.aoa_to_sheet([
-      ["Your SIP Plan"],[],
-      ["Monthly Investable", s.investable],["Years", s.y],["Final Corpus", s.fv.total],
-      ["Total Invested", s.investable*12*s.y],["Wealth Created", s.fv.total - s.investable*12*s.y]
-    ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Plan");
-    XLSX.writeFile(wb, "My-Wealth-Plan.xlsx");
-  });
-
-  validateAlloc();
-  setTimeout(renderAll, 300);
+  // Initial
+  setTimeout(calculate, 500);
 });
 </script>
 </body>

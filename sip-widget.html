@@ -7,52 +7,68 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  :root{--bg:#f8fafc;--card:#fff;--accent:#0d9488;--accent2:#0f766e;--muted:#64748b;--success:#16a34a;--danger:#dc2626;--warn:#d97706}
+  :root{
+    --bg:#f8fffe;
+    --card:#ffffff;
+    --accent:#0d9488;
+    --accent2:#0f766e;
+    --muted:#64748b;
+    --success:#16a34a;
+    --danger:#dc2626;
+    --warn:#d97706;
+    --gold:#ca8a04;
+    --shadow:0 10px 30px rgba(0,0,0,0.08);
+  }
   *{box-sizing:border-box}
-  body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;padding:20px 16px;color:#1e293b;line-height:1.6}
+  body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;padding:20px 16px;color:#1e293b;line-height:1.6;background:linear-gradient(135deg,#f0fdfa 0%,#ccfbf1 100%)}
   .wrap{max-width:1100px;margin:0 auto}
-  .header{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;margin-bottom:20px}
-  h1{font-size:24px;margin:0;font-weight:900}
-  .sub{color:var(--muted);font-size:14px}
-  .card{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-  label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
-  input[type=number],select{width:100%;padding:12px;border-radius:10px;border:1px solid #cbd5e1;font-size:15px}
-  .controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;align-items:center}
-  .btn{padding:12px 20px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:15px;transition:all .2s}
+  .header{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;margin-bottom:24px}
+  h1{font-size:28px;margin:0;font-weight:900;background:linear-gradient(to right,#0d9488,#14b8a6);background-clip:text;-webkit-background-clip:text;color:transparent}
+  .sub{color:var(--muted);font-size:15px}
+  .card{background:var(--card);border-radius:20px;padding:28px;box-shadow:var(--shadow);border:1px solid #ccfbf1}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+  label{display:block;font-size:14px;font-weight:600;margin-bottom:8px;color:#1e293b}
+  input[type=number],select{width:100%;padding:14px;border-radius:12px;border:1px solid #94a3b8;font-size:16px;transition:border .2s}
+  input:focus{border-color:var(--accent);outline:none}
+  .controls{display:flex;flex-wrap:wrap;gap:14px;margin-top:24px;align-items:center}
+  .btn{padding:14px 28px;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:16px;transition:all .3s;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
   .btn.primary{background:var(--accent);color:#fff}
-  .btn.ghost{background:transparent;border:1px solid #94a3b8;color:#475569}
-  .panel{background:#f0fdfa;border-radius:14px;padding:20px;border:1px solid #ccfbf1;margin-top:20px}
-  .kpi{font-size:28px;font-weight:900;color:var(--accent2)}
-  .big{font-size:36px;font-weight:900;color:var(--accent)}
+  .btn.primary:hover{background:var(--accent2);transform:translateY(-2px)}
+  .btn.ghost{background:transparent;border:2px solid #94a3b8;color:#475569}
+  .panel{background:#f0fdfa;border-radius:16px;padding:24px;border:1px solid #ccfbf1;margin-top:24px;position:relative;overflow:hidden}
+  .panel::before{content:"";position:absolute;top:0;left:0;width:6px;height:100%;background:var(--accent)}
+  .kpi{font-size:32px;font-weight:900;color:var(--accent2)}
+  .big{font-size:44px;font-weight:900;color:var(--accent);text-shadow:0 2px 8px rgba(13,148,136,0.2)}
   .muted{color:var(--muted);font-size:14px}
-  .segmented{display:inline-flex;border-radius:12px;overflow:hidden;border:1px solid #cbd5e1}
-  .segmented button{background:#fff;padding:10px 18px;cursor:pointer;font-weight:600;transition:all .2s}
+  .segmented{display:inline-flex;border-radius:14px;overflow:hidden;border:1px solid #94a3b8;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+  .segmented button{background:#fff;padding:12px 20px;cursor:pointer;font-weight:700;transition:all .3s;font-size:15px}
   .segmented button.active{background:var(--accent);color:#fff}
-  .radio-group{display:flex;gap:20px;margin:12px 0}
-  .radio-group label{display:flex;align-items:center;gap:8px;cursor:pointer}
-  .whatsapp{position:fixed;right:16px;bottom:16px;background:#25D366;color:#fff;padding:16px;border-radius:50px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);text-decoration:none;font-weight:700;z-index:999;font-size:16px}
-  .highlight{background:#fffbeb;border:1px solid #fde68a;padding:16px;border-radius:12px;margin:16px 0}
-  .danger{color:#dc2626;font-weight:700}
-  .success{color:var(--success);font-weight:700}
-  .goal-banner{background:#fef3c7;border:1px solid #f59e0b;padding:16px;border-radius:12px;margin:16px 0;font-weight:600}
-  .summary-bar{background:var(--accent);color:#fff;padding:16px;border-radius:12px;margin:20px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;text-align:center}
-  .summary-bar .kpi{font-size:24px;color:#fff}
-  .slider-container{margin:20px 0}
-  .slider-container label{display:block;margin-bottom:8px;font-weight:600}
-  input[type=range]{width:100%;height:8px;border-radius:5px;background:#ddd;outline:none}
-  input[type=range]::-webkit-slider-thumb{background:var(--accent);width:24px;height:24px;border-radius:50%;cursor:pointer}
-  @media(min-width:768px){.grid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}}
+  .radio-group{display:flex;gap:24px;margin:16px 0;flex-wrap:wrap}
+  .radio-group label{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600}
+  .whatsapp{position:fixed;right:20px;bottom:20px;background:#25D366;color:#fff;padding:18px 20px;border-radius:60px;display:flex;gap:12px;align-items:center;box-shadow:0 12px 30px rgba(37,211,102,0.4);text-decoration:none;font-weight:700;z-index:999;font-size:17px;animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 12px 30px rgba(37,211,102,0.4)}50%{box-shadow:0 12px 40px rgba(37,211,102,0.6)}100%{box-shadow:0 12px 30px rgba(37,211,102,0.4)}}
+  .summary-bar{background:linear-gradient(to right,var(--accent),var(--accent2));color:#fff;padding:20px;border-radius:16px;margin:24px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;text-align:center;box-shadow:var(--shadow)}
+  .summary-bar .kpi{font-size:28px;color:#fff}
+  .highlight{background:#fffbeb;border:1px solid #fde68a;padding:20px;border-radius:16px;margin:20px 0;text-align:center}
+  .goal-banner{background:#fef3c7;border:1px solid #f59e0b;padding:16px;border-radius:12px;margin:20px 0;font-weight:600}
+  .slider-container{margin:24px 0;background:#f8fffe;padding:20px;border-radius:16px;border:1px solid #ccfbf1}
+  input[type=range]{width:100%;height:10px;border-radius:5px;background:#ddd;outline:none}
+  input[type=range]::-webkit-slider-thumb{background:var(--accent);width:28px;height:28px;border-radius:50%;cursor:pointer}
+  .existing-hint{background:#e0f2fe;padding:20px;border-radius:16px;margin:24px 0;border-left:6px solid #0d9488}
+  .chart-panel{background:#fff;border-radius:16px;padding:24px;box-shadow:var(--shadow);margin-top:24px}
 </style>
 </head>
 <body>
-<a class="whatsapp" href="https://wa.me/917666123827?text=Hi!%20I%20just%20used%20your%20SIP%20Planner%20and%20want%20to%20start%20my%20investment%20today." target="_blank" rel="noopener">Talk on WhatsApp</a>
+
+<a class="whatsapp" href="https://wa.me/917666123827?text=Hi!%20I%20just%20used%20your%20SIP%20Planner.%20I%20can%20invest%20around%20₹50,000/month.%20Please%20help%20me%20start." target="_blank" rel="noopener">
+  Talk on WhatsApp
+</a>
 
 <div class="wrap">
   <div class="header">
     <div>
       <h1>Simple SIP Planner</h1>
-      <div class="sub">Build your wealth. Start today.</div>
+      <div class="sub">See your money grow — beautifully</div>
     </div>
     <div style="display:flex;gap:12px">
       <button id="downloadBtn" class="btn primary">Download Excel</button>
@@ -62,8 +78,8 @@
 
   <div class="card">
     <div style="display:flex;gap:12px;margin-bottom:20px">
-      <button id="tabPlanner" class="btn" style="font-weight:700">Planner</button>
-      <button id="tabGoal" class="btn">Goal Planner</button>
+      <button id="tabPlanner" class="btn primary" style="font-weight:700">Planner</button>
+      <button id="tabGoal" class="btn ghost">Goal Planner</button>
     </div>
 
     <!-- Planner -->
@@ -95,25 +111,25 @@
         <div><label>Misc Expenses (₹)</label><input id="misc" type="number" value="20000"></div>
       </div>
 
-      <hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0">
+      <hr style="margin:28px 0;border:none;border-top:1px dashed #94a3b8">
 
-      <div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:end">
+      <div style="display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:end">
         <div>
-          <div style="margin-bottom:8px;font-weight:700">Risk Profile</div>
+          <div style="margin-bottom:10px;font-weight:700">Risk Profile</div>
           <div class="segmented">
             <button id="presetCons" class="seg-btn">Conservative</button>
             <button id="presetBal" class="seg-btn active">Balanced</button>
             <button id="presetAgg" class="seg-btn">Aggressive</button>
           </div>
         </div>
-        <div style="min-width:320px">
-          <label Allocation (Large • Mid • Small %)</label>
-          <div style="display:flex;gap:8px">
+        <div style="min-width:340px">
+          <label>Allocation (Large • Mid • Small %)</label>
+          <div style="display:flex;gap:10px">
             <input id="lc" type="number" value="45" min="0" max="100">
             <input id="mc" type="number" value="30" min="0" max="100">
             <input id="sc" type="number" value="25" min="0" max="100">
           </div>
-          <div class="muted" style="margin-top:6px;text-align:center">Large • Mid • Small</div>
+          <div class="muted" style="margin-top:8px;text-align:center">Large • Mid • Small</div>
         </div>
       </div>
 
@@ -132,18 +148,18 @@
             <option value="30">30 years</option>
           </select>
         </div>
-        <div><label>Large cap CAGR %</label><input id="lc_r" type="number" value="9" step="0.5"></div>
-        <div><label>Mid cap CAGR %</label><input id="mc_r" type="number" value="12" step="0.5"></div>
-        <div><label>Small cap CAGR %</label><input id="sc_r" type="number" value="16" step="0.5"></div>
+        <div><label>Large Cap CAGR %</label><input id="lc_r" type="number" value="9" step="0.5"></div>
+        <div><label>Mid Cap CAGR %</label><input id="mc_r" type="number" value="12" step="0.5"></div>
+        <div><label>Small Cap CAGR %</label><input id="sc_r" type="number" value="16" step="0.5"></div>
       </div>
 
-      <div style="margin-top:20px;padding:16px;background:#f0f9ff;border-radius:12px">
-        <label><input type="radio" name="sipMode" value="auto" checked> Auto-calculate SIP from surplus</label><br>
-        <label><input type="radio" name="sipMode" value="manual"> I want to invest exactly <input id="manualSIP" type="number" value="10000" style="width:120px;display:inline-block;margin-left:8px"> per month</label>
+      <div style="margin-top:24px;padding:20px;background:#f0f9ff;border-radius:16px">
+        <label style="font-weight:600"><input type="radio" name="sipMode" value="auto" checked> Auto-calculate SIP from surplus income</label><br><br>
+        <label style="font-weight:600"><input type="radio" name="sipMode" value="manual"> I want to invest exactly <input id="manualSIP" type="number" value="10000" style="width:140px;display:inline-block;margin-left:10px;padding:10px"> per month</label>
       </div>
 
-      <div style="margin-top:20px;text-align:center">
-        <button id="calc" class="btn primary" style="padding:14px 32px;font-size:18px">Calculate My Future</button>
+      <div style="text-align:center;margin:32px 0">
+        <button id="calc" class="btn primary" style="padding:16px 40px;font-size:20px">Calculate</button>
       </div>
 
       <div id="goalOverrideBanner" class="goal-banner" style="display:none"></div>
@@ -152,63 +168,69 @@
       <div id="summaryBar" class="summary-bar" style="display:none">
         <div><div class="muted">Total Monthly Income</div><div class="kpi" id="totalIncome">₹2 L</div></div>
         <div><div class="muted">Total Expenses</div><div class="kpi" id="totalExpense">₹1 L</div></div>
-        <div><div class="muted">Monthly SIP</div><div class="kpi" id="monthlySIP">₹1 L</div></div>
+        <div><div class="muted">Your Monthly SIP</div><div class="kpi" id="monthlySIP">₹1 L</div></div>
       </div>
 
       <!-- Money Story -->
       <div id="moneyStory" class="panel" style="display:none;text-align:center">
-        <h2 style="margin:0 0 16px;font-size:28px">Your Money Story</h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;max-width:600px;margin:0 auto">
+        <h2 style="margin:0 0 20px;font-size:30px">Your Money Story</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;max-width:700px;margin:0 auto">
           <div><div class="muted">You will invest</div><div class="kpi" id="totalInvested">₹72 Lakh</div></div>
           <div><div class="muted">It will grow to</div><div class="big" id="finalCorpus">₹4.8 Crore</div></div>
         </div>
-        <div style="margin:24px 0;font-size:48px">→</div>
+        <div style="margin:32px 0;font-size:60px;color:var(--accent)">→</div>
         <div class="highlight">
           <div class="muted">Wealth created</div>
           <div class="big" style="color:#16a34a" id="wealthCreated">₹4.1 Crore</div>
-          <div style="font-size:24px;margin-top:8px" id="multiplier">That’s <strong>6.7×</strong> your money</div>
+          <div style="font-size:28px;margin-top:12px" id="multiplier">That’s <strong>6.7×</strong> your money</div>
         </div>
       </div>
 
-      <!-- What if +5k -->
+      <!-- Extra SIP Slider -->
       <div id="extraSIP" class="slider-container" style="display:none">
-        <label>What if you add just ₹5,000 more per month?</label>
-        <input type="range" min="0" max="20000" value="5000" step="1000" id="extraSlider">
-        <div style="font-size:20px;margin-top:12px">Extra ₹<span id="extraAmount">5,000</span>/month → Final corpus becomes <strong id="newCorpus">₹5.6 Crore</strong> (+<span id="gainAmount">₹80 Lakh</span>)</div>
+        <label style="font-size:18px;font-weight:700">What if you add just ₹5,000 more per month?</label>
+        <input type="range" min="0" max="25000" value="5000" step="1000" id="extraSlider">
+        <div style="font-size:22px;margin-top:16px;text-align:center">
+          Extra ₹<span id="extraAmount">5,000</span>/month → Final corpus becomes <strong id="newCorpus">₹5.6 Crore</strong> 
+          <span style="color:#16a34a">(+<span id="gainAmount">₹80 Lakh</span>)</span>
+        </div>
       </div>
 
       <!-- SWP -->
       <div id="swpPanel" class="panel" style="display:none">
-        <h3>Your Retirement Income (SWP)</h3>
-        <div style="font-size:20px">Your ₹4.8 Crore can give you <strong id="monthlySWP">₹1.6 Lakh/month</strong> for <strong>30+ years</strong> safely (4% rule)</div>
+        <h3>Your Retirement Income</h3>
+        <div style="font-size:22px">Your ₹4.8 Crore can safely give you <strong id="monthlySWP">₹1.6 Lakh/month</strong> for 30+ years (4% rule)</div>
       </div>
 
       <!-- FD vs Equity -->
       <div id="fdVsEquity" class="highlight" style="display:none">
         <strong>Fixed Deposit vs Equity:</strong><br>
-        Same ₹50,000/month for 18 years → FD @7% after tax = ₹2.1 Cr<br>
-        Equity @12% = ₹5.6 Cr → <span class="danger">You lose ₹3.5 Cr by staying in FD</span>
+        Same ₹50,000/month for 18 years → FD @7% after tax ≈ ₹2.1 Cr<br>
+        Equity @12% ≈ ₹5.6 Cr → <span class="danger">You lose ₹3.5 Cr by staying in FD</span>
+      </div>
+
+      <!-- Existing Portfolio Hint -->
+      <div class="existing-hint">
+        <strong>Already have investments?</strong><br>
+        You might be leaving ₹1–3 Crore on the table just by not rebalancing properly.<br>
+        <em>Reply on WhatsApp — I’ll review your portfolio for free and show you exactly how much extra you can make.</em>
       </div>
 
       <!-- Emergency Fund -->
       <div id="emergencyFund" class="panel" style="display:none">
-        <div><strong>Emergency Fund Needed:</strong> 6–12 months expenses = ₹6–12 Lakh</div>
-        <div id="emergencyStatus" style="font-size:18px;margin-top:8px"></div>
+        <strong>Emergency Fund Needed:</strong> 6–12 months expenses = ₹6–12 Lakh<br>
+        <span id="emergencyStatus" style="font-size:18px"></span>
       </div>
 
-      <!-- Talk on WhatsApp -->
-      <div style="text-align:center;margin:30px 0">
-        <a href="#" id="talkWhatsApp" class="btn primary" style="padding:16px 40px;font-size:20px;background:#25D366">Talk on WhatsApp → Start My SIP</a>
-      </div>
-
-      <!-- Compare + Chart -->
+      <!-- Compare Cards -->
       <div class="panel">
         <h3>Compare Risk Profiles</h3>
-        <div id="compareCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px"></div>
+        <div id="compareCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px"></div>
       </div>
 
-      <div class="panel">
-        <h3>Your Wealth Growth</h3>
+      <!-- Chart -->
+      <div class="chart-panel">
+        <h3>Your Wealth Growth Over Time</h3>
         <canvas id="growthChart"></canvas>
       </div>
     </div>
@@ -221,7 +243,7 @@
         <div><label>Expected CAGR %</label><input id="goalCagr" type="number" value="12" step="0.5"></div>
         <div><label>Inflation % (annual)</label><input id="goalInfl" type="number" value="6" step="0.5"></div>
       </div>
-      <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap">
+      <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap">
         <button id="calcGoal" class="btn primary">Calculate Required SIP</button>
         <button id="applyGoalToPlanner" class="btn ghost">Apply to Planner →</button>
         <button id="useActualIncome" class="btn" style="display:none">Use actual income</button>
@@ -229,9 +251,9 @@
       <div id="goalResult" class="panel" style="margin-top:20px"></div>
     </div>
 
-    <div class="panel">
-      <h3>Golden Rules of Wealth</h3>
-      <ul style="margin:0;padding-left:20px;color:#475569">
+    <div class="panel" style="margin-top:32px;text-align:center">
+      <h3>Golden Rules of Wealth Creation</h3>
+      <ul style="display:inline-block;text-align:left;max-width:600px;margin:20px auto;color:#475569">
         <li>Start today — every year delay costs crores</li>
         <li>Equity rewards patience, not timing</li>
         <li>Never break your SIP — volatility is your friend</li>
@@ -268,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return fv * i / ((Math.pow(1+i,n)-1)*(1+i));
   };
 
+  // LOCKED PRESETS — NEVER CHANGE AGAIN
   const presets = {
     conservative: {name:"Conservative", lc:50, mc:30, sc:20},
     balanced:     {name:"Balanced",     lc:45, mc:30, sc:25},
@@ -279,22 +302,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const validateAlloc = () => {
     const sum = (+$('lc').value || 0) + (+$('mc').value || 0) + (+$('sc').value || 0);
-    const warn = $('allocWarning');
-    if (!warn) return false;
-    if (sum !== 100) {
-      warn.innerHTML = `<span style="color:#d97706">Allocation ${sum}% (must be 100%)</span>`;
-      return false;
-    }
-    warn.innerHTML = '<span style="color:#16a34a">100% Correct</span>';
+    if (sum !== 100) return false;
     return true;
   };
 
-  ['lc','mc','sc'].forEach(id => $(id)?.addEventListener('input', validateAlloc));
-
   const getIncome = () => {
-    if ($('singleInputs').style.display !== 'none') {
-      return +$('incomeSingle').value || 0;
-    }
+    if ($('singleInputs').style.display !== 'none') return +$('incomeSingle').value || 0;
     return (+$('husband').value || 0) + (+$('wife').value || 0);
   };
 
@@ -303,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const expense = (+$('house').value || 0) + (+$('emi').value || 0) + (+$('misc').value || 0);
     const autoSIP = Math.max(0, income - expense);
     const manualSIP = +$('manualSIP').value || 0;
-    const sipAmount = document.querySelector('input[name="sipMode"]:checked').value === 'manual' ? manualSIP : (lastRequiredSIP ?? autoSIP);
+    const sipAmount = $('sipMode_auto').checked ? (lastRequiredSIP ?? autoSIP) : manualSIP;
     const y = +$('years').value;
     const rates = {lc: +$('lc_r').value, mc: +$('mc_r').value, sc: +$('sc_r').value};
     const alloc = {lc: +$('lc').value, mc: +$('mc').value, sc: +$('sc').value};
@@ -319,13 +332,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!validateAlloc()) return;
     const s = getState();
 
-    // Summary
     $('totalIncome').textContent = fmt(s.income);
     $('totalExpense').textContent = fmt(s.expense);
     $('monthlySIP').textContent = fmt(s.sipAmount);
     $('summaryBar').style.display = 'grid';
 
-    // Money Story
     const totalInvested = s.sipAmount * 12 * s.y;
     const wealth = s.fv - totalInvested;
     const multiplier = (s.fv / totalInvested).toFixed(1);
@@ -334,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('wealthCreated').textContent = fmt(wealth);
     $('multiplier').innerHTML = `That’s <strong>${multiplier}×</strong> your money`;
 
-    // Extra SIP
+    // Extra slider
     const extra = +$('extraSlider').value;
     const newSIP = s.sipAmount + extra;
     const newFV = fvSIP(newSIP * s.alloc.lc/100, s.rates.lc, s.y) +
@@ -344,55 +355,51 @@ document.addEventListener('DOMContentLoaded', () => {
     $('newCorpus').textContent = fmt(newFV);
     $('gainAmount').textContent = fmt(newFV - s.fv);
 
-    // SWP
     $('monthlySWP').textContent = fmt(s.fv * 0.04 / 12);
 
-    // Emergency
     const needed = s.expense * 9;
     $('emergencyStatus').innerHTML = s.sipAmount * 12 * 3 >= needed ?
-      '<span class="success">You are building emergency fund fast</span>' :
-      '<span class="danger">Keep 6–12 months expenses aside first</span>';
+      '<span style="color:#16a34a">You are building emergency fund fast</span>' :
+      '<span style="color:#dc2626">Keep 6–12 months expenses aside first</span>';
 
-    // WhatsApp link
-    $('talkWhatsApp').href = `https://wa.me/917666123827?text=Hi!%20I%20can%20invest%20₹${s.sipAmount.toLocaleString('en-IN')}%20per%20month.%20Please%20help%20me%20start%20my%20SIP.`;
-
-    // Show all
-    ['moneyStory','extraSIP','swpPanel','fdVsEquity','emergencyFund'].forEach(id => $(id).style.display = 'block');
-
-    // Compare cards + chart (same logic as before)
+    // Compare cards
     let cards = '';
     Object.values(presets).forEach(p => {
       const fvTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc, s.y) +
                       fvSIP(s.sipAmount * p.mc/100, s.rates.mc, s.y) +
                       fvSIP(s.sipAmount * p.sc/100, s.rates.sc, s.y);
       const active = p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc;
-      cards += `<div class="panel" style="border:${active?'4px solid #0d9488':'1px solid #e2e8f0'}">
+      cards += `<div class="panel" style="border:${active?'5px solid #0d9488':'1px solid #e2e8f0'};transform:${active?'scale(1.05)':''};transition:all .3s">
         <strong>${p.name}</strong><br><small>L:${p.lc}% M:${p.mc}% S:${p.sc}%</small><br>
         <div class="kpi">${fmt(fvTotal)}</div>
       </div>`;
     });
     $('compareCards').innerHTML = cards;
 
+    // Chart
     if (growthChart) growthChart.destroy();
-    const labels = Array.from({length: s.y + 1}, (_, i) => i === 0 ? 'Now' : `Year ${i}`);
+    const labels = Array.from({length: s.y + 1}, (_, i) => i === 0 ? 'Start' : `Year ${i}`);
     const data = labels.map((_, i) => i === 0 ? 0 : fvSIP(s.sipAmount, 12, i));
     growthChart = new Chart($('growthChart'), {
       type: 'line',
       data: {labels, datasets: [{label: 'Your Wealth', data, borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,0.1)', fill: true, tension: 0.4}]},
-      options: {plugins: {tooltip: {callbacks: {label: ctx => fmt(ctx.raw)}}}}
+      options: {plugins: {tooltip: {callbacks: {label: ctx => fmt(ctx.raw)}}}, scales: {y: {ticks: {callback: v => v >= 1e7 ? (v/1e7).toFixed(1)+' Cr' : (v/1e5).toFixed(1)+' L'}}}}
     });
 
+    // Show sections
+    ['moneyStory','extraSIP','swpPanel','fdVsEquity','emergencyFund'].forEach(id => $(id).style.display = 'block');
+
+    // Goal banner
     if (lastRequiredSIP) {
       $('goalOverrideBanner').style.display = 'block';
-      $('goalOverrideBanner').innerHTML = `Goal Mode Active: Using ₹${fmt(lastRequiredSIP)}/month`;
+      $('goalOverrideBanner').innerHTML = `Goal Mode Active: Using ${fmt(lastRequiredSIP)}/month to reach target`;
     }
   };
 
-  // Event Listeners
+  // Events
   document.querySelectorAll('input[name="userType"]').forEach(r => r.addEventListener('change', () => {
-    const isCouple = r.value === 'couple';
-    $('singleInputs').style.display = isCouple ? 'none' : 'block';
-    $('coupleInputs').style.display = isCouple ? 'block' : 'none';
+    $('singleInputs').style.display = r.value === 'couple' ? 'none' : 'block';
+    $('coupleInputs').style.display = r.value === 'couple' ? 'block' : 'none';
   }));
 
   $('extraSlider').addEventListener('input', renderAll);
@@ -401,8 +408,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const p = presets[name];
     $('lc').value = p.lc; $('mc').value = p.mc; $('sc').value = p.sc;
     document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-    $(`preset${name.charAt(0).toUpperCase() + name.slice(1)}`)?.classList.add('active');
-    validateAlloc(); renderAll();
+    const btn = $(`preset${name.charAt(0).toUpperCase() + name.slice(1)}`);
+    if (btn) btn.classList.add('active');
+    renderAll();
   };
 
   $('presetCons').onclick = () => applyPreset('conservative');
@@ -410,27 +418,31 @@ document.addEventListener('DOMContentLoaded', () => {
   $('presetAgg').onclick = () => applyPreset('aggressive');
 
   $('calc').onclick = renderAll;
+
   $('calcGoal').onclick = () => {
     const target = +$('target').value;
     const y = +$('goalYears').value;
     const cagr = +$('goalCagr').value;
     const required = reqSIP(target, cagr, y);
-    $('goalResult').innerHTML = `<div style="font-size:22px;font-weight:900">Required SIP: ${fmt(required)}</div>`;
+    $('goalResult').innerHTML = `<div style="font-size:24px;font-weight:900">Required SIP: ${fmt(required)}</div>`;
     lastRequiredSIP = required;
   };
+
   $('applyGoalToPlanner').onclick = () => {
     if (!lastRequiredSIP) return alert("Calculate goal first");
     $('useActualIncome').style.display = 'inline-block';
     renderAll();
     $('tabPlanner').click();
   };
+
   $('useActualIncome').onclick = () => { lastRequiredSIP = null; $('useActualIncome').style.display = 'none'; renderAll(); };
 
-  $('tabPlanner').onclick = () => { $('panePlanner').style.display = ''; $('paneGoal').style.display = 'none'; };
-  $('tabGoal').onclick = () => { $('panePlanner').style.display = 'none'; $('paneGoal').style.display = ''; };
+  $('tabPlanner').onclick = () => { $('panePlanner').style.display = ''; $('paneGoal').style.display = 'none'; $('tabPlanner').className = 'btn primary'; $('tabGoal').className = 'btn ghost'; };
+  $('tabGoal').onclick = () => { $('panePlanner').style.display = 'none'; $('paneGoal').style.display = ''; $('tabPlanner').className = 'btn ghost'; $('tabGoal').className = 'btn primary'; };
 
-  validateAlloc();
-  setTimeout(renderAll, 300);
+  $('resetBtn').onclick = () => location.reload();
+
+  setTimeout(renderAll, 400);
 });
 </script>
 </body>

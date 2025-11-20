@@ -7,6 +7,8 @@
 
 <!-- SheetJS for Excel export -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Chart.js for charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
   :root{
@@ -14,44 +16,59 @@
     --muted:#6b7280; --success:#16a34a; --danger:#dc2626;
   }
   *{box-sizing:border-box}
-  body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);margin:0;padding:28px;color:#0f172a}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);margin:0;padding:26px;color:#0f172a}
   .wrap{max-width:1100px;margin:0 auto}
-  .header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  .header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
   h1{font-size:20px;margin:0}
   .sub{color:var(--muted);font-size:13px}
-  .card{background:var(--card);border-radius:14px;box-shadow:0 8px 30px rgba(11,16,30,0.06);padding:20px}
-  .tabs{display:flex;gap:8px;margin-bottom:16px}
-  .tab{padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600;color:var(--accent-2);background:transparent;border:1px solid transparent}
+  .card{background:var(--card);border-radius:12px;box-shadow:0 8px 30px rgba(11,16,30,0.06);padding:18px}
+  .tabs{display:flex;gap:8px;margin-bottom:12px}
+  .tab{padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700;color:var(--accent-2);background:transparent;border:1px solid transparent}
   .tab.active{background:linear-gradient(180deg,var(--accent) 0%,var(--accent-2) 100%);color:white;box-shadow:0 6px 18px rgba(11,116,222,0.14)}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
   label{display:block;font-size:13px;color:#111;margin-bottom:6px}
   input[type=number], select, input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px}
   .controls{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
-  .btn{padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+  .btn{padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
   .btn.primary{background:var(--accent);color:white}
   .btn.ghost{background:transparent;border:1px solid #e6e9ef}
-  .panel{background:#fbfdff;border-radius:10px;padding:14px;border:1px solid #eef3fb}
+  .panel{background:#fbfdff;border-radius:10px;padding:12px;border:1px solid #eef3fb}
   .muted{color:var(--muted);font-size:13px}
   .result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px}
   .small{font-size:13px;color:#111}
   .kpi{font-size:16px;font-weight:700}
   .accent-text{color:var(--accent-2);font-weight:700}
-  footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
-
-  /* small */
-  @media (max-width:600px){
-    .header{flex-direction:column;align-items:flex-start;gap:6px}
-    .controls{flex-direction:column;align-items:stretch}
+  .segmented{display:inline-flex;border-radius:10px;overflow:hidden;border:1px solid #e6e9ef}
+  .segmented button{background:transparent;border:0;padding:8px 12px;cursor:pointer}
+  .segmented button.active{background:var(--accent);color:white}
+  .tips{margin-top:14px;padding:12px;border-radius:10px;background:linear-gradient(90deg,#fff 0,#fbfdff 100%);border:1px solid #eef3fb}
+  .flex{display:flex;gap:8px;align-items:center}
+  .info{display:inline-block;margin-left:6px;color:var(--muted);font-weight:700}
+  .tooltip{
+    position:relative; display:inline-block;
   }
+  .tooltip .tt{
+    visibility:hidden; width:220px; background:#111; color:#fff; text-align:left; border-radius:6px; padding:8px; position:absolute; z-index:10; bottom:125%; left:50%; transform:translateX(-50%); font-size:12px; line-height:1.3;
+  }
+  .tooltip:hover .tt{visibility:visible}
+  .whatsapp{position:fixed; right:18px; bottom:18px; background:#25D366; color:white; padding:12px 14px; border-radius:999px; display:flex; gap:10px; align-items:center; box-shadow:0 8px 20px rgba(0,0,0,0.12); text-decoration:none; font-weight:700}
+  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+  @media (max-width:600px){ .header{flex-direction:column;align-items:flex-start;gap:6px} .controls{flex-direction:column;align-items:stretch} .charts{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
+  <a class="whatsapp" id="waBtn" href="https://wa.me/917666123827" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M20.5 3.5L3.5 20.5V24l3.5-1.1L24 7.5L20.5 3.5Z" fill="white" opacity=".08"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.099-.47-.149-.669.15-.198.297-.767.967-.94 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.06-.173-.298-.018-.459.13-.608.134-.133.298-.347.447-.52.149-.174.198-.298.297-.497.099-.198 0-.372-.05-.521-.05-.149-.669-1.612-.915-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.02-1.04 2.479 0 1.459 1.065 2.872 1.213 3.071.149.198 2.095 3.2 5.077 4.487 2.982 1.288 2.982.858 3.517.806.536-.052 1.758-.718 2.006-1.409.248-.692.248-1.285.173-1.409-.074-.124-.272-.198-.569-.347z" fill="white"/></svg>
+    Any doubts? Chat on WhatsApp
+  </a>
+
   <div class="wrap">
     <div class="header">
       <div>
         <h1>Simple SIP Planner</h1>
-        <div class="sub">Interactive planner with allocation, projections and goal calculator. Download your results as Excel.</div>
+        <div class="sub">Planner + Goal Calculator • Save to Excel • Compare scenarios</div>
       </div>
+
       <div style="display:flex;gap:8px;align-items:center">
         <button id="downloadBtn" class="btn primary" title="Download results as Excel">Download Excel</button>
         <button id="resetBtn" class="btn ghost" title="Reset to defaults">Reset</button>
@@ -69,38 +86,64 @@
       <div id="panePlanner" class="pane">
         <div class="grid">
           <div>
-            <label for="husband">Husband monthly income (₹)</label>
+            <label for="husband">Husband monthly income (₹)
+              <span class="tooltip info">i<span class="tt">Gross monthly income for husband. Used to calculate total investable amount.</span></span>
+            </label>
             <input id="husband" type="number" value="100000" min="0" />
           </div>
           <div>
-            <label for="wife">Wife monthly income (₹)</label>
+            <label for="wife">Wife monthly income (₹)
+              <span class="tooltip info">i<span class="tt">Gross monthly income for wife.</span></span>
+            </label>
             <input id="wife" type="number" value="100000" min="0" />
           </div>
           <div>
-            <label for="house">Household expenses (₹)</label>
+            <label for="house">Household expenses (₹)
+              <span class="tooltip info">i<span class="tt">Fixed household costs such as rent, groceries, utilities.</span></span>
+            </label>
             <input id="house" type="number" value="60000" min="0" />
           </div>
           <div>
-            <label for="emi">EMI (₹)</label>
+            <label for="emi">EMI (₹)
+              <span class="tooltip info">i<span class="tt">Monthly loan EMIs you must pay.</span></span>
+            </label>
             <input id="emi" type="number" value="20000" min="0" />
           </div>
           <div>
-            <label for="misc">Misc expenses (₹)</label>
+            <label for="misc">Misc expenses (₹)
+              <span class="tooltip info">i<span class="tt">Variable spending like entertainment and transport.</span></span>
+            </label>
             <input id="misc" type="number" value="20000" min="0" />
           </div>
         </div>
 
-        <hr style="margin:16px 0;border:none;border-top:1px solid #eef3fb">
+        <hr style="margin:14px 0;border:none;border-top:1px solid #eef3fb">
 
-        <h3 style="margin:8px 0 6px">Allocation (percent)</h3>
-        <div class="grid">
-          <div><label for="lc">Large cap %</label><input id="lc" type="number" value="40" min="0" max="100"/></div>
-          <div><label for="mc">Mid cap %</label><input id="mc" type="number" value="30" min="0" max="100"/></div>
-          <div><label for="sc">Small cap %</label><input id="sc" type="number" value="20" min="0" max="100"/></div>
-          <div><label for="gold">Bullions (Gold) %</label><input id="gold" type="number" value="10" min="0" max="100"/></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between">
+          <div>
+            <div style="margin-bottom:6px;font-weight:700">Allocation preset
+              <span class="tooltip info">i<span class="tt">Quick presets. Conservative keeps more in Large cap; Aggressive increases Mid/Small cap weight.</span></span>
+            </div>
+            <div class="segmented" role="tablist" aria-label="Allocation presets">
+              <button id="presetCons" class="seg-btn">Conservative</button>
+              <button id="presetBal" class="seg-btn active">Balanced</button>
+              <button id="presetAgg" class="seg-btn">Aggressive</button>
+            </div>
+          </div>
+
+          <div style="min-width:320px">
+            <label style="display:block;margin-bottom:6px">Allocation (you can still edit numbers below)</label>
+            <div style="display:flex;gap:8px">
+              <input id="lc" type="number" value="40" min="0" max="100" style="width:25%"/>
+              <input id="mc" type="number" value="30" min="0" max="100" style="width:25%"/>
+              <input id="sc" type="number" value="20" min="0" max="100" style="width:25%"/>
+              <input id="gold" type="number" value="10" min="0" max="100" style="width:25%"/>
+            </div>
+            <div class="muted" style="margin-top:6px">Large • Mid • Small • Gold (percent)</div>
+          </div>
         </div>
 
-        <div class="controls">
+        <div style="margin-top:12px" class="controls">
           <div style="min-width:160px">
             <label for="years">Projection years</label>
             <select id="years"><option>10</option><option>15</option><option>20</option><option>5</option></select>
@@ -113,6 +156,28 @@
         </div>
 
         <div id="plannerResults" class="result-grid" aria-live="polite"></div>
+
+        <div class="charts">
+          <div class="panel"><canvas id="allocChart" height="220" aria-label="Allocation chart"></canvas></div>
+          <div class="panel"><canvas id="fvChart" height="220" aria-label="Projected values chart"></canvas></div>
+        </div>
+
+        <div class="tips">
+          <h4 style="margin:0 0 6px">Quick tips — why invest in mutual funds with us</h4>
+          <ul style="margin:0 0 0 18px;color:var(--muted)">
+            <li>Experienced fund selection with disciplined risk controls to match your horizon.</li>
+            <li>Automatic SIPs reduce timing risk and enforce disciplined investing.</li>
+            <li>Diversified exposure to Large, Mid and Small caps for balanced growth and resilience.</li>
+            <li>Transparent fees and personalised advice — we help choose funds that fit your profile.</li>
+          </ul>
+        </div>
+
+        <div style="margin-top:12px" class="panel">
+          <h3 style="margin:0 0 8px">Compare scenario</h3>
+          <div id="compareBlock" class="small">Select a preset then click Calculate to auto-compare with a more aggressive scenario.</div>
+          <div style="margin-top:8px" id="compareChartContainer"></div>
+        </div>
+
       </div>
 
       <!-- Goal Planner tab -->
@@ -141,12 +206,12 @@
 
         <div id="goalResult" style="margin-top:14px" aria-live="polite"></div>
 
-        <div class="muted" style="margin-top:10px">Formula used: required monthly SIP = FV * r / [ ((1+r)^n − 1) * (1+r) ] where r = monthly rate and n = months.</div>
+        <div class="muted" style="margin-top:10px">Formula: required monthly SIP = FV * r / [ ((1+r)^n − 1) * (1+r) ] where r = monthly rate and n = months.</div>
       </div>
 
     </div>
 
-    <footer>Tip: click Download Excel to save your inputs and results locally. Everything runs in your browser.</footer>
+    <footer style="margin-top:10px" class="muted">Tip: Use the Compare scenario to quickly see what extra returns an aggressive tilt would have produced for the same SIP.</footer>
   </div>
 
 <script>
@@ -156,7 +221,7 @@
   /* ---------- helpers ---------- */
   function indianFormat(x){
     if(x === null || x === undefined || isNaN(x)) return "-";
-    x = Math.round(Number(x));
+    x = Math.round(Number(x) || 0);
     if(x >= 10000000) return (x/10000000).toFixed(2) + " Cr";
     if(x >= 100000) return (x/100000).toFixed(2) + " L";
     return x.toLocaleString('en-IN');
@@ -204,10 +269,37 @@
   tabPlanner.addEventListener('click', function(){ activateTab('planner'); });
   tabGoal.addEventListener('click', function(){ activateTab('goal'); });
 
+  /* ---------- presets ---------- */
+  var presets = {
+    conservative: {lc:60, mc:25, sc:10, gold:5},
+    balanced:     {lc:45, mc:30, sc:15, gold:10},
+    aggressive:   {lc:30, mc:40, sc:25, gold:5},
+    moreAggressive:{lc:20, mc:45, sc:30, gold:5} // fallback comparison when already aggressive
+  };
+
+  function applyPreset(name){
+    var p = presets[name];
+    if(!p) return;
+    document.getElementById('lc').value = p.lc;
+    document.getElementById('mc').value = p.mc;
+    document.getElementById('sc').value = p.sc;
+    document.getElementById('gold').value = p.gold;
+    // mark segmented UI
+    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+    if(name==='conservative') document.getElementById('presetCons').classList.add('active');
+    if(name==='balanced') document.getElementById('presetBal').classList.add('active');
+    if(name==='aggressive') document.getElementById('presetAgg').classList.add('active');
+    renderPlanner();
+  }
+
+  document.getElementById('presetCons').addEventListener('click', ()=>applyPreset('conservative'));
+  document.getElementById('presetBal').addEventListener('click', ()=>applyPreset('balanced'));
+  document.getElementById('presetAgg').addEventListener('click', ()=>applyPreset('aggressive'));
+
   /* ---------- planner calculations ---------- */
   var calcBtn = document.getElementById('calc');
-  function renderPlanner(){
-    // inputs
+
+  function getPlannerInputState(){
     var husband = Number(document.getElementById('husband').value||0);
     var wife = Number(document.getElementById('wife').value||0);
     var house = Number(document.getElementById('house').value||0);
@@ -241,45 +333,156 @@
     var fv_gold = fv_sip(gold_sip, gold_r, years);
     var fv_total = fv_lc + fv_mc + fv_sc + fv_gold;
 
-    var container = document.getElementById('plannerResults');
-    var html = '';
-    html += '<div class="panel"><h3>Quick summary</h3>';
-    html += '<div class="small">Total income: <span class="kpi">₹' + indianFormat(totalIncome) + '</span></div>';
-    html += '<div class="small">Total expenses: <span class="kpi">₹' + indianFormat(totalExpenses) + '</span></div>';
-    html += '<div class="small">Investable per month: <span class="kpi">₹' + indianFormat(investable) + '</span></div>';
-    html += '<div class="small">Allocation total: <span class="accent-text">' + allocTotal + '%</span> ';
-    html += (allocTotal===100 ? '<span style="color:var(--success)">✔</span>' : '<span style="color:var(--danger)">⚠ (should be 100%)</span>');
-    html += '</div></div>';
-
-    html += '<div class="panel"><h3>Monthly SIP split</h3>';
-    html += '<div class="small">Large cap: <span class="kpi">₹' + indianFormat(lc_sip) + '</span></div>';
-    html += '<div class="small">Mid cap: <span class="kpi">₹' + indianFormat(mc_sip) + '</span></div>';
-    html += '<div class="small">Small cap: <span class="kpi">₹' + indianFormat(sc_sip) + '</span></div>';
-    html += '<div class="small">Gold: <span class="kpi">₹' + indianFormat(gold_sip) + '</span></div>';
-    html += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
-    html += '<div class="small">Total SIP monthly: <span class="kpi">₹' + indianFormat(total_sip) + '</span></div>';
-    html += '</div>';
-
-    html += '<div class="panel"><h3>Projection (' + years + ' yrs)</h3>';
-    html += '<div class="small">Large cap FV: <span class="kpi">₹' + indianFormat(fv_lc) + '</span> at ' + lc_r + '% p.a.</div>';
-    html += '<div class="small">Mid cap FV: <span class="kpi">₹' + indianFormat(fv_mc) + '</span> at ' + mc_r + '% p.a.</div>';
-    html += '<div class="small">Small cap FV: <span class="kpi">₹' + indianFormat(fv_sc) + '</span> at ' + sc_r + '% p.a.</div>';
-    html += '<div class="small">Gold FV: <span class="kpi">₹' + indianFormat(fv_gold) + '</span> at ' + gold_r + '% p.a.</div>';
-    html += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
-    html += '<div class="small"><strong>Total projected corpus: ₹' + indianFormat(fv_total) + '</strong></div>';
-    html += '</div>';
-
-    container.innerHTML = html;
-
-    // store last results to be used by export
-    window._plannerState = {
-      inputs: {husband,wife,house,emi,misc,lc,mc,sc,gold,lc_r,mc_r,sc_r,gold_r,years},
-      outputs: {investable,lc_sip,mc_sip,sc_sip,gold_sip,total_sip,fv_lc,fv_mc,fv_sc,fv_gold,fv_total}
+    return {
+      inputs:{husband,wife,house,emi,misc,lc,mc,sc,gold,lc_r,mc_r,sc_r,gold_r,years},
+      totals:{totalIncome,totalExpenses,investable,allocTotal,total_sip},
+      outputs:{fv_lc,fv_mc,fv_sc,fv_gold,fv_total,lc_sip,mc_sip,sc_sip,gold_sip}
     };
   }
 
+  var allocChart=null, fvChart=null, compareChart=null;
+
+  function renderCharts(state, compareState){
+    // Allocation pie
+    var ctxA = document.getElementById('allocChart').getContext('2d');
+    var allocData = [state.inputs.lc, state.inputs.mc, state.inputs.sc, state.inputs.gold];
+    if(allocChart) allocChart.destroy();
+    allocChart = new Chart(ctxA, {
+      type:'pie',
+      data:{
+        labels:['Large','Mid','Small','Gold'],
+        datasets:[{data:allocData, backgroundColor:['#0b74de','#0a5fb2','#ff7a59','#ffd166']}]
+      },
+      options:{plugins:{legend:{position:'bottom'}}}
+    });
+
+    // FV bar
+    var ctxF = document.getElementById('fvChart').getContext('2d');
+    var fvData = [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc, state.outputs.fv_gold];
+    if(fvChart) fvChart.destroy();
+    fvChart = new Chart(ctxF, {
+      type:'bar',
+      data:{
+        labels:['Large','Mid','Small','Gold'],
+        datasets:[{label:'Projected FV (₹)', data:fvData, backgroundColor:['#0b74de','#0a5fb2','#ff7a59','#ffd166']}]
+      },
+      options:{scales:{y:{ticks:{callback:function(v){return v>=100000? (v/100000).toFixed(1)+'L':v}}}}, plugins:{legend:{display:false}}}
+    });
+
+    // Compare chart (if provided)
+    var compEl = document.getElementById('compareChartContainer');
+    compEl.innerHTML = '<canvas id="compareChart" height="220"></canvas>';
+    var ctxC = document.getElementById('compareChart').getContext('2d');
+    if(compareState){
+      var labels = ['Large','Mid','Small','Gold'];
+      var a1 = [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc, state.outputs.fv_gold];
+      var a2 = [compareState.outputs.fv_lc, compareState.outputs.fv_mc, compareState.outputs.fv_sc, compareState.outputs.fv_gold];
+      if(compareChart) compareChart.destroy();
+      compareChart = new Chart(ctxC, {
+        type:'bar',
+        data:{
+          labels:labels,
+          datasets:[
+            {label:'Current', data:a1, backgroundColor:'#0b74de'},
+            {label:'Comparison', data:a2, backgroundColor:'#ff7a59'}
+          ]
+        },
+        options:{plugins:{legend:{position:'bottom'}}, scales:{y:{ticks:{callback:function(v){return v>=100000? (v/100000).toFixed(1)+'L':v}}}}
+      });
+    }
+  }
+
+  function renderPlanner(){
+    var state = getPlannerInputState();
+
+    // summary HTML
+    var c = '';
+    c += '<div class="panel"><h3>Quick summary</h3>';
+    c += '<div class="small">Total income: <span class="kpi">₹' + indianFormat(state.totals.totalIncome) + '</span></div>';
+    c += '<div class="small">Household: <span class="kpi">₹' + indianFormat(state.inputs.house) + '</span> • EMI: <span class="kpi">₹' + indianFormat(state.inputs.emi) + '</span> • Misc: <span class="kpi">₹' + indianFormat(state.inputs.misc) + '</span></div>';
+    c += '<div class="small">Total expenses: <span class="kpi">₹' + indianFormat(state.totals.totalExpenses) + '</span></div>';
+    c += '<div class="small">Investable per month: <span class="kpi">₹' + indianFormat(state.totals.investable) + '</span></div>';
+    c += '<div class="small">Allocation total: <span class="accent-text">' + (state.totals.allocTotal) + '%</span> ' + (state.totals.allocTotal===100 ? '<span style="color:var(--success)">✔</span>' : '<span style="color:var(--danger)">⚠ (should be 100%)</span>') + '</div>';
+    c += '</div>';
+
+    c += '<div class="panel"><h3>Monthly SIP split</h3>';
+    c += '<div class="small">Large cap: <span class="kpi">₹' + indianFormat(state.outputs.lc_sip) + '</span></div>';
+    c += '<div class="small">Mid cap: <span class="kpi">₹' + indianFormat(state.outputs.mc_sip) + '</span></div>';
+    c += '<div class="small">Small cap: <span class="kpi">₹' + indianFormat(state.outputs.sc_sip) + '</span></div>';
+    c += '<div class="small">Gold: <span class="kpi">₹' + indianFormat(state.outputs.gold_sip) + '</span></div>';
+    c += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
+    c += '<div class="small">Total SIP monthly: <span class="kpi">₹' + indianFormat(state.totals.total_sip) + '</span></div>';
+    c += '</div>';
+
+    c += '<div class="panel"><h3>Projection (' + state.inputs.years + ' yrs)</h3>';
+    c += '<div class="small">Large cap FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_lc) + '</span> at ' + state.inputs.lc_r + '% p.a.</div>';
+    c += '<div class="small">Mid cap FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_mc) + '</span> at ' + state.inputs.mc_r + '% p.a.</div>';
+    c += '<div class="small">Small cap FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_sc) + '</span> at ' + state.inputs.sc_r + '% p.a.</div>';
+    c += '<div class="small">Gold FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_gold) + '</span> at ' + state.inputs.gold_r + '% p.a.</div>';
+    c += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
+    c += '<div class="small"><strong>Total projected corpus: ₹' + indianFormat(state.outputs.fv_total) + '</strong></div>';
+    c += '</div>';
+
+    document.getElementById('plannerResults').innerHTML = c;
+
+    // choose comparison preset: next more aggressive
+    var allocTotal = state.totals.allocTotal;
+    var currentPreset = null;
+    // decide which preset matches best by checking closeness (simple)
+    function presetScore(p){
+      return Math.abs(p.lc - state.inputs.lc) + Math.abs(p.mc - state.inputs.mc) + Math.abs(p.sc - state.inputs.sc) + Math.abs(p.gold - state.inputs.gold);
+    }
+    // choose best matching preset
+    var best = ['conservative','balanced','aggressive'].reduce(function(acc,k){
+      var s = presetScore(presets[k]);
+      return s < acc.score ? {name:k,score:s} : acc;
+    }, {name:null,score:1e9});
+    currentPreset = best.name || 'balanced';
+
+    var comparePresetName = null;
+    if(currentPreset==='conservative') comparePresetName='balanced';
+    else if(currentPreset==='balanced') comparePresetName='aggressive';
+    else comparePresetName='moreAggressive';
+
+    // build compareState by applying that preset but keeping same returns and investable and years
+    var cp = presets[comparePresetName];
+    var compareState = {
+      inputs: {
+        lc: cp.lc, mc: cp.mc, sc: cp.sc, gold: cp.gold,
+        lc_r: state.inputs.lc_r, mc_r: state.inputs.mc_r, sc_r: state.inputs.sc_r, gold_r: state.inputs.gold_r,
+        years: state.inputs.years
+      }
+    };
+    // calculate SIP amounts for comparison using same investable
+    var inv = state.totals.investable;
+    compareState.inputs.lc_sip = inv * (cp.lc/100);
+    compareState.inputs.mc_sip = inv * (cp.mc/100);
+    compareState.inputs.sc_sip = inv * (cp.sc/100);
+    compareState.inputs.gold_sip = inv * (cp.gold/100);
+    compareState.outputs = {
+      fv_lc: fv_sip(compareState.inputs.lc_sip, compareState.inputs.lc_r, compareState.inputs.years),
+      fv_mc: fv_sip(compareState.inputs.mc_sip, compareState.inputs.mc_r, compareState.inputs.years),
+      fv_sc: fv_sip(compareState.inputs.sc_sip, compareState.inputs.sc_r, compareState.inputs.years),
+      fv_gold: fv_sip(compareState.inputs.gold_sip, compareState.inputs.gold_r, compareState.inputs.years)
+    };
+    compareState.outputs.fv_total = compareState.outputs.fv_lc + compareState.outputs.fv_mc + compareState.outputs.fv_sc + compareState.outputs.fv_gold;
+
+    // render charts
+    renderCharts(state, compareState);
+
+    // compare summary text
+    var compHtml = '';
+    compHtml += '<div style="display:flex;gap:12px;flex-wrap:wrap">';
+    compHtml += '<div class="panel" style="flex:1"><strong>Current</strong><div class="small">Total FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_total) + '</span></div></div>';
+    compHtml += '<div class="panel" style="flex:1"><strong>' + (comparePresetName==='moreAggressive'?'More Aggressive':''+comparePresetName.charAt(0).toUpperCase()+comparePresetName.slice(1)) + '</strong><div class="small">Total FV: <span class="kpi">₹' + indianFormat(compareState.outputs.fv_total) + '</span></div></div>';
+    compHtml += '</div>';
+    document.getElementById('compareBlock').innerHTML = compHtml;
+
+    // store last results for export
+    window._plannerState = { state, compareState };
+  }
+
   calcBtn.addEventListener('click', renderPlanner);
-  // auto run on load
   renderPlanner();
 
   /* ---------- goal planner ---------- */
@@ -305,19 +508,13 @@
     html += '</div>';
     document.getElementById('goalResult').innerHTML = html;
 
-    // store for export
-    window._goalState = {
-      inputs: {FV,years,cagr,infl},
-      outputs: {sip,total_invested,wealth_created,real_target}
-    };
+    window._goalState = { inputs:{FV,years,cagr,infl}, outputs:{sip,total_invested,wealth_created,real_target} };
   });
-
-  // run default goal calculation once
+  // initial run
   calcGoalBtn.click();
 
   /* ---------- reset ---------- */
   document.getElementById('resetBtn').addEventListener('click', function(){
-    // reset fields to defaults
     var defaults = {
       husband:100000, wife:100000, house:60000, emi:20000, misc:20000,
       lc:40, mc:30, sc:20, gold:10,
@@ -328,37 +525,48 @@
       var el = document.getElementById(id);
       if(el) el.value = defaults[id];
     });
+    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('presetBal').classList.add('active');
     renderPlanner();
     calcGoalBtn.click();
   });
 
   /* ---------- Excel export using SheetJS ---------- */
   document.getElementById('downloadBtn').addEventListener('click', function(){
-    var planner = window._plannerState || {};
+    var planner = window._plannerState && window._plannerState.state;
+    var compare = window._plannerState && window._plannerState.compareState;
     var goal = window._goalState || {};
 
     // Build summary sheet data as arrays (header row then rows)
     var summaryRows = [
       ["Field","Value"]
     ];
-    // planner inputs
-    var inputs = (planner.inputs || {});
-    summaryRows.push(["Husband monthly income (₹)", inputs.husband || ""]);
-    summaryRows.push(["Wife monthly income (₹)", inputs.wife || ""]);
-    summaryRows.push(["Total investable per month (₹)", (planner.outputs ? planner.outputs.investable : "")]);
-    summaryRows.push(["Allocation Large %", inputs.lc || ""]);
-    summaryRows.push(["Allocation Mid %", inputs.mc || ""]);
-    summaryRows.push(["Allocation Small %", inputs.sc || ""]);
-    summaryRows.push(["Allocation Gold %", inputs.gold || ""]);
-    summaryRows.push(["Total SIP monthly (₹)", (planner.outputs ? planner.outputs.total_sip : "")]);
-    summaryRows.push([]);
-    // planner outputs (FV)
-    summaryRows.push(["Projection years", inputs.years || ""]);
-    summaryRows.push(["Large cap FV (nominal)", (planner.outputs ? planner.outputs.fv_lc : "")]);
-    summaryRows.push(["Mid cap FV (nominal)", (planner.outputs ? planner.outputs.fv_mc : "")]);
-    summaryRows.push(["Small cap FV (nominal)", (planner.outputs ? planner.outputs.fv_sc : "")]);
-    summaryRows.push(["Gold FV (nominal)", (planner.outputs ? planner.outputs.fv_gold : "")]);
-    summaryRows.push(["Total projected corpus (nominal)", (planner.outputs ? planner.outputs.fv_total : "")]);
+    // incomes & expenses
+    if(planner){
+      summaryRows.push(["Husband monthly income (₹)", planner.inputs.husband || ""]);
+      summaryRows.push(["Wife monthly income (₹)", planner.inputs.wife || ""]);
+      summaryRows.push(["Household expenses (₹)", planner.inputs.house || ""]);
+      summaryRows.push(["EMI (₹)", planner.inputs.emi || ""]);
+      summaryRows.push(["Misc expenses (₹)", planner.inputs.misc || ""]);
+      summaryRows.push(["Total expenses (₹)", planner.totals.totalExpenses || ""]);
+      summaryRows.push(["Investable per month (₹)", planner.totals.investable || ""]);
+      summaryRows.push([]);
+      summaryRows.push(["Allocation Category","Percent","Monthly SIP (₹)"]);
+      summaryRows.push(["Large cap", planner.inputs.lc || "", planner.outputs.lc_sip || ""]);
+      summaryRows.push(["Mid cap", planner.inputs.mc || "", planner.outputs.mc_sip || ""]);
+      summaryRows.push(["Small cap", planner.inputs.sc || "", planner.outputs.sc_sip || ""]);
+      summaryRows.push(["Bullions (Gold)", planner.inputs.gold || "", planner.outputs.gold_sip || ""]);
+      summaryRows.push(["Total SIP monthly (₹)", planner.totals.total_sip || ""]);
+      summaryRows.push([]);
+      summaryRows.push(["Projection years", planner.inputs.years || ""]);
+      summaryRows.push(["Large cap FV (nominal)", planner.outputs.fv_lc || ""]);
+      summaryRows.push(["Mid cap FV (nominal)", planner.outputs.fv_mc || ""]);
+      summaryRows.push(["Small cap FV (nominal)", planner.outputs.fv_sc || ""]);
+      summaryRows.push(["Gold FV (nominal)", planner.outputs.fv_gold || ""]);
+      summaryRows.push(["Total projected corpus (nominal)", planner.outputs.fv_total || ""]);
+    } else {
+      summaryRows.push(["No planner results available"]);
+    }
 
     // Goal planner sheet
     var goalRows = [
@@ -374,9 +582,23 @@
       goalRows.push(["Total invested (₹)", goal.outputs ? goal.outputs.total_invested : ""]);
       goalRows.push(["Wealth (gain) (₹)", goal.outputs ? goal.outputs.wealth_created : ""]);
       goalRows.push(["Real target (today Rs) (₹)", goal.outputs ? goal.outputs.real_target : ""]);
+    } else {
+      goalRows.push(["No goal results available"]);
     }
 
-    // convert numbers to plain numbers in arrays (SheetJS prefers numbers)
+    // compare scenario sheet
+    var compRows = [["Category","Current FV (₹)","Comparison FV (₹)"]];
+    if(planner && compare){
+      compRows.push(["Large", planner.outputs.fv_lc || 0, compare.outputs.fv_lc || 0]);
+      compRows.push(["Mid", planner.outputs.fv_mc || 0, compare.outputs.fv_mc || 0]);
+      compRows.push(["Small", planner.outputs.fv_sc || 0, compare.outputs.fv_sc || 0]);
+      compRows.push(["Gold", planner.outputs.fv_gold || 0, compare.outputs.fv_gold || 0]);
+      compRows.push(["Total", planner.outputs.fv_total || 0, compare.outputs.fv_total || 0]);
+    } else {
+      compRows.push(["No compare data"]);
+    }
+
+    // normalize numbers where possible
     function normRows(rows){
       return rows.map(function(r){
         return r.map(function(cell){
@@ -389,26 +611,67 @@
 
     var wsSummary = XLSX.utils.aoa_to_sheet(normRows(summaryRows));
     var wsGoal = XLSX.utils.aoa_to_sheet(normRows(goalRows));
+    var wsComp = XLSX.utils.aoa_to_sheet(normRows(compRows));
 
-    // create workbook and append sheets
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
     XLSX.utils.book_append_sheet(wb, wsGoal, "Goal Planner");
+    XLSX.utils.book_append_sheet(wb, wsComp, "Compare");
 
-    // write as binary and download
     var wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
     var blob = new Blob([wbout], {type:"application/octet-stream"});
     var fname = "SIP-Plan-" + (new Date()).toISOString().slice(0,10) + ".xlsx";
-    if(window.navigator && window.navigator.msSaveOrOpenBlob){
-      window.navigator.msSaveOrOpenBlob(blob, fname);
-    } else {
-      var link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = fname;
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(function(){ URL.revokeObjectURL(link.href); document.body.removeChild(link); }, 3000);
-    }
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fname;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(function(){ URL.revokeObjectURL(link.href); document.body.removeChild(link); }, 3000);
+  });
+
+  /* ---------- initial presets state ---------- */
+  document.getElementById('presetBal').classList.add('active');
+
+  /* ---------- simple save/restore in localStorage (optional) ---------- */
+  function saveLocal(){
+    try{
+      var data = {
+        inputs: getPlannerInputState().inputs,
+        goal: window._goalState && window._goalState.inputs
+      };
+      localStorage.setItem('sip_planner_saved', JSON.stringify(data));
+    }catch(e){}
+  }
+  function restoreLocal(){
+    try{
+      var raw = localStorage.getItem('sip_planner_saved');
+      if(!raw) return;
+      var data = JSON.parse(raw);
+      if(data.inputs){
+        Object.keys(data.inputs).forEach(function(k){
+          var el = document.getElementById(k);
+          if(el) el.value = data.inputs[k];
+        });
+      }
+      if(data.goal){
+        Object.keys(data.goal).forEach(function(k){
+          var el = document.getElementById(k);
+          if(el) el.value = data.goal[k];
+        });
+      }
+      renderPlanner();
+      if(window._goalState) calcGoalBtn.click();
+    }catch(e){}
+  }
+  // restore on load
+  restoreLocal();
+  // save on changes (debounced)
+  var saveTimer = null;
+  document.querySelectorAll('input,select').forEach(function(el){
+    el.addEventListener('input', function(){
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveLocal, 800);
+    });
   });
 
 })();

@@ -701,33 +701,77 @@ try {
     }
   });
 
-  // local save/restore
-  function saveLocal() {
-    try {
-      var save = { inputs: {}, goal: window._goalState && window._goalState.inputs };
-      ['husband', 'wife', 'house', 'emi', 'misc', 'lc', 'mc', 'sc', 'lc_r', 'mc_r', 'sc_r', 'years', 'target', 'goalYears', 'goalCagr', 'goalInfl'].forEach(function (k) {
-        if ($(k)) save.inputs[k] = $(k).value;
-      });
-      localStorage.setItem('sip_saved', JSON.stringify(save));
-    } catch (e) { }
-  }
-  function restoreLocal() {
-    try {
-      var raw = localStorage.getItem('sip_saved');
-      if (!raw) return;
-      var obj = JSON.parse(raw);
-      if (obj && obj.inputs) Object.keys(obj.inputs).forEach(function (k) { if ($(k)) $(k).value = obj.inputs[k]; });
-      renderPlanner();
-    } catch (e) { }
-  }
-  document.querySelectorAll('input,select').forEach(function (el) {
-    el.addEventListener('input', function () { clearTimeout(window._saveT); window._saveT = setTimeout(saveLocal, 800); });
-  });
-  restoreLocal();
+// ──────────────────────────────────────────────────────────────
+// Local Save / Restore
+// ──────────────────────────────────────────────────────────────
+function saveLocal() {
+  try {
+    const save = {
+      inputs: {},
+      goal: (window._goalState && window._goalState.inputs) || {}
+    };
 
-  // initial actions
-  validateAlloc();
-  setTimeout(renderPlanner, 150);
+    const fields = [
+      'husband', 'wife', 'house', 'emi', 'misc',
+      'lc', 'mc', 'sc', 'gold',
+      'lc_r', 'mc_r', 'sc_r', 'gold_r', 'years',
+      'target', 'goalYears', 'goalCagr', 'goalInfl'
+    ];
+
+    fields.forEach(id => {
+      const el = $id(id);
+      if (el) save.inputs[id] = el.value;
+    });
+
+    localStorage.setItem('sip_saved', JSON.stringify(save));
+  } catch (e) {
+    safeLog('saveLocal error', e);
+  }
+}
+
+function restoreLocal() {
+  try {
+    const raw = localStorage.getItem('sip_saved');
+    if (!raw) return;
+
+    const data = JSON.parse(raw);
+    if (!data || !data.inputs) return;
+
+    Object.keys(data.inputs).forEach(id => {
+      const el = $id(id);
+      if (el) el.value = data.inputs[id];
+    });
+
+    // restore goal tab fields if they exist
+    if (data.goal) {
+      Object.keys(data.goal).forEach(id => {
+        const el = $id(id);
+        if (el) el.value = data.goal[id];
+      });
+    }
+
+    renderPlanner();
+    if ($id('calcGoal')) $id('calcGoal').click();
+  } catch (e) {
+    safeLog('restoreLocal error', e);
+  }
+}
+
+// Auto-save on any input change (debounced)
+let saveTimer = null;
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('input', () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveLocal, 800);
+  });
+});
+
+// Run on page load
+restoreLocal();
+
+// Initial render
+if (typeof validateAlloc === 'function') validateAlloc();
+setTimeout(renderPlanner, 150);
 
 });
 </script>

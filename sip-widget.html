@@ -35,7 +35,7 @@
   .segmented{display:inline-flex;border-radius:14px;overflow:hidden;border:1px solid #94a3b8;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
   .segmented button{background:#fff;padding:12px 20px;cursor:pointer;font-weight:700;transition:all .3s;font-size:15px;color:var(--text)}
   .segmented button.active{background:var(--accent);color:#fff}
-  .radio-group{display:flex;gap:24px;margin:16px 0;flex:wrap}
+  .radio-group{display:flex;gap:24px;margin:16px 0;flex-wrap:wrap}
   .radio-group label{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600}
   .whatsapp{position:fixed;right:20px;bottom:20px;background:#25D366;color:#fff;padding:18px 24px;border-radius:60px;display:flex;gap:12px;align-items:center;box-shadow:0 12px 30px rgba(37,211,102,0.4);text-decoration:none;font-weight:700;z-index:999;font-size:17px;animation:pulse 2s infinite}
   @keyframes pulse{0%{box-shadow:0 12px 30px rgba(37,211,102,0.4)}50%{box-shadow:0 12px 40px rgba(37,211,102,0.6)}100%{box-shadow:0 12px 30px rgba(37,211,102,0.4)}}
@@ -58,10 +58,10 @@
   .option-card.balanced{background:#f0fdfa;border:3px solid #0d9488}
   .option-card.accelerated{background:#f0fdf4;border:2px solid #16a34a;box-shadow:0 8px 25px rgba(22,163,74,0.2)}
   .star{position:absolute;top:12px;right:12px;font-size:20px}
-  .alloc-row{display:flex;gap:10px;align-items:end;margin-top:12px}
-  .alloc-row > div{flex:1}
-  .alloc-row input{width:100%}
-  .alloc-label{font-size:13px;color:#555;margin-bottom:4px}
+  .alloc-group{margin-top:24px}
+  .alloc-row{display:flex;gap:16px;align-items:end;flex-wrap:wrap}
+  .alloc-col{flex:1;min-width:140px}
+  .alloc-col label{font-size:13px;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -136,15 +136,19 @@
           <div class="muted" style="margin-top:8px" id="selectedProfile">You selected: <strong>Balanced</strong></div>
         </div>
 
-        <div style="flex:1;max-width:500px">
-          <label style="font-weight:600">Allocation & Expected Returns</label>
+        <div class="alloc-group">
+          <div style="font-weight:600;margin-bottom:12px">Allocation</div>
           <div class="alloc-row">
-            <div><div class="alloc-label">Large Cap %</div><input id="lc" type="number" value="45" min="0" max="100"></div>
-            <div><div class="alloc-label">Mid Cap %</div><input id="mc" type="number" value="30" min="0" max="100"></div>
-            <div><div class="alloc-label">Small Cap %</div><input id="sc" type="number" value="25" min="0" max="100"></div>
-            <div><div class="alloc-label">CAGR %</div><input id="lc_r" type="number" value="10" step="0.5" style="width:70px"></div>
-            <div><div class="alloc-label">CAGR %</div><input id="mc_r" type="number" value="14" step="0.5" style="width:70px"></div>
-            <div><div class="alloc-label">CAGR %</div><input id="sc_r" type="number" value="18" step="0.5" style="width:70px"></div>
+            <div class="alloc-col"><label>Large Cap %</label><input id="lc" type="number" value="45" min="0" max="100"></div>
+            <div class="alloc-col"><label>Mid Cap %</label><input id="mc" type="number" value="30" min="0" max="100"></div>
+            <div class="alloc-col"><label>Small Cap %</label><input id="sc" type="number" value="25" min="0" max="100"></div>
+          </div>
+
+          <div style="font-weight:600;margin:20px 0 12px">Expected CAGR (%)</div>
+          <div class="alloc-row">
+            <div class="alloc-col"><label>Large Cap</label><input id="lc_r" type="number" value="10" step="0.5"></div>
+            <div class="alloc-col"><label>Mid Cap</label><input id="mc_r" type="number" value="14" step="0.5"></div>
+            <div class="alloc-col"><label>Small Cap</label><input id="sc_r" type="number" value="18" step="0.5"></div>
           </div>
         </div>
       </div>
@@ -156,21 +160,20 @@
         • Balanced portfolio gives you both: <strong>growth + peace of mind</strong>
       </div>
 
-      <div class="controls" style="margin-top:24px">
-        <div><label>Time Horizon</label>
-          <select id="years">
-            <option value="3">3 years</option>
-            <option value="6">6 years</option>
-            <option value="9">9 years</option>
-            <option value="12">12 years</option>
-            <option value="15" selected>15 years</option>
-            <option value="18">18 years</option>
-            <option value="21">21 years</option>
-            <option value="24">24 years</option>
-            <option value="27">27 years</option>
-            <option value="30">30 years</option>
-          </select>
-        </div>
+      <div style="margin-top:24px">
+        <label>Time Horizon</label>
+        <select id="years">
+          <option value="3">3 years</option>
+          <option value="6">6 years</option>
+          <option value="9">9 years</option>
+          <option value="12">12 years</option>
+          <option value="15" selected>15 years</option>
+          <option value="18">18 years</option>
+          <option value="21">21 years</option>
+          <option value="24">24 years</option>
+          <option value="27">27 years</option>
+          <option value="30">30 years</option>
+        </select>
       </div>
 
       <div style="margin-top:24px;padding:20px;background:#f0f9ff;border-radius:16px">
@@ -272,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveIncome = () => {
     const income = $('singleInputs').style.display !== 'none' 
       ? +$('incomeSingle').value 
-      : (+$('husband').' ).value || 0) + (+$('wife').value || 0);
+      : (+$('husband').value || 0) + (+$('wife').value || 0);
     userIncome = income;
     localStorage.setItem('sip_income', income);
     if ($('goalIncome')) $('goalIncome').value = income || '';
@@ -342,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
       Equity → ${fmt(s.fv)} → <span class="danger">You’d leave ${fmt(s.fv - s.fdFV)} on the table</span>`;
     $('fdComparison').style.display = 'block';
 
-    // Extra SIP slider
     const extra = +$('extraSlider').value;
     const newSIP = s.sipAmount + extra;
     const newFV = fvSIP(newSIP * s.alloc.lc/100, s.rates.lc, s.y) +
@@ -352,7 +354,6 @@ document.addEventListener('DOMContentLoaded', () => {
     $('newCorpus').textContent = fmt(newFV);
     $('gainAmount').textContent = fmt(newFV - s.fv);
 
-    // Emergency fund
     const needed = s.expense * 9;
     $('emergencyFund').innerHTML = `<strong>Emergency Fund:</strong> 6–12 months expenses<br>
       <span style="font-size:18px">${s.sipAmount * 12 * 3 >= needed ? 
@@ -360,12 +361,19 @@ document.addEventListener('DOMContentLoaded', () => {
         '<span style="color:#dc2626">Build 6–12 months expenses first</span>'}</span>`;
     $('emergencyFund').style.display = 'block';
 
-    // Risk comparison cards
-    const profiles = [{name:"Conservative", lc:50, mc:30, sc:20}, {name:"Balanced", lc:45, mc:30, sc:25}, {name:"Aggressive", lc:35, mc:35, sc:30}];
+    const profiles = [
+      {name:"Conservative", lc:50, mc:30, sc:20},
+      {name:"Balanced", lc:45, mc:30, sc:25},
+      {name:"Aggressive", lc:35, mc:35, sc:30}
+    ];
     let cards = '';
     profiles.forEach(p => {
-      const fvTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc, s.y) + fvSIP(s.sipAmount * p.mc/100, s.rates.mc, s.y) + fvSIP(s.sipAmount * p.sc/100, s.rates.sc, s.y);
-      const bullTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc+4, s.y) + fvSIP(s.sipAmount * p.mc/100, s.rates.mc+8, s.y) + fvSIP(s.sipAmount * p.sc/100, s.rates.sc+12, s.y);
+      const fvTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc, s.y) +
+                      fvSIP(s.sipAmount * p.mc/100, s.rates.mc, s.y) +
+                      fvSIP(s.sipAmount * p.sc/100, s.rates.sc, s.y);
+      const bullTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc+4, s.y) +
+                        fvSIP(s.sipAmount * p.mc/100, s.rates.mc+8, s.y) +
+                        fvSIP(s.sipAmount * p.sc/100, s.rates.sc+12, s.y);
       const active = p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc;
       cards += `<div class="panel" style="border:${active?'5px solid #0d9488':'1px solid #e2e8f0'}">
         <strong>${p.name}</strong><br><small>L:${p.lc}% M:${p.mc}% S:${p.sc}%</small><br>
@@ -375,7 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     $('compareCards').innerHTML = cards;
 
-    // Chart
     if (growthChart) growthChart.destroy();
     const labels = Array.from({length: s.y + 1}, (_, i) => i === 0 ? 'Now' : `Year ${i}`);
     const normalData = labels.map((_, i) => fvSIP(s.sipAmount, 14, i));
@@ -405,6 +412,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const validateAlloc = () => {
     const sum = (+$('lc').value || 0) + (+$('mc').value || 0) + (+$('sc').value || 0);
     return sum === 100;
+  };
+
+  // Excel Download
+  $('downloadBtn').onclick = () => {
+    const s = getState();
+    const wb = XLSX.utils.book_new();
+
+    const data = [
+      ["Simple SIP Planner - Your Plan"],
+      [""],
+      ["Personal Details"],
+      ["Age", s.age],
+      ["Monthly Income", fmt(s.income)],
+      ["Monthly Expenses", fmt(s.expense)],
+      ["Surplus", fmt(s.autoSIP)],
+      [""],
+      ["Investment Details"],
+      ["Monthly SIP", fmt(s.sipAmount)],
+      ["Time Horizon", s.y + " years"],
+      ["Large Cap %", s.alloc.lc + "% @ " + s.rates.lc + "%"],
+      ["Mid Cap %", s.alloc.mc + "% @ " + s.rates.mc + "%"],
+      ["Small Cap %", s.alloc.sc + "% @ " + s.rates.sc + "%"],
+      [""],
+      ["Results"],
+      ["Total Invested", fmt(s.sipAmount * 12 * s.y)],
+      ["Final Corpus (Conservative)", fmt(s.fv)],
+      ["Final Corpus (Bull Market)", fmt(s.bullFV)],
+      ["Wealth Created", fmt(s.fv - s.sipAmount * 12 * s.y)],
+      ["Multiplier", (s.fv / (s.sipAmount * 12 * s.y)).toFixed(1) + "x"],
+      ["FD would give", fmt(s.fdFV)],
+      ["Opportunity Cost", fmt(s.fv - s.fdFV)]
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, "SIP Plan");
+    XLSX.writeFile(wb, "My_SIP_Plan.xlsx");
   };
 
   // Goal Planner

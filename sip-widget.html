@@ -400,7 +400,7 @@ var presets = {
                   {label:'Comparison', data:a2, backgroundColor:'#ff7a59'}
                 ]
               },
-              options:{plugins:{legend:{position:'bottom'}}, scales:{y:{ticks:{callback:function(v){ return v>=100000? (v/100000).toFixed(1)+'L': v }}}}
+              options: { plugins: { legend: { position: 'bottom' } }, scales: { y: { ticks: { callback: function(v) { return v >= 100000 ? (v/100000).toFixed(1)+'L' : v; } } } } }
             });
           }
         }

@@ -10,8 +10,7 @@
 <style>
   :root{
     --bg:#f8fffe;--card:#ffffff;--accent:#0d9488;--accent2:#0f766e;--text:#1e293b;--muted:#64748b;
-    --success:#16a34a;--danger:#dc2626;--shadow:0 10px 30px rgba(0,0,0,0.08);
-    --bull:#f59e0b;
+    --success:#16a34a;--danger:#dc2626;--shadow:0 10px 30px rgba(0,0,0,0.08);--bull:#f59e0b;
   }
   *{box-sizing:border-box}
   body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;padding:20px 16px;color:var(--text);line-height:1.6;background:linear-gradient(135deg,#f0fdfa 0%,#ccfbf1 100%)}
@@ -36,7 +35,7 @@
   .segmented{display:inline-flex;border-radius:14px;overflow:hidden;border:1px solid #94a3b8;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
   .segmented button{background:#fff;padding:12px 20px;cursor:pointer;font-weight:700;transition:all .3s;font-size:15px;color:var(--text)}
   .segmented button.active{background:var(--accent);color:#fff}
-  .radio-group{display:flex;gap:24px;margin:16px 0;flex-wrap:wrap}
+  .radio-group{display:flex;gap:24px;margin:16px 0;flex:wrap}
   .radio-group label{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600}
   .whatsapp{position:fixed;right:20px;bottom:20px;background:#25D366;color:#fff;padding:18px 24px;border-radius:60px;display:flex;gap:12px;align-items:center;box-shadow:0 12px 30px rgba(37,211,102,0.4);text-decoration:none;font-weight:700;z-index:999;font-size:17px;animation:pulse 2s infinite}
   @keyframes pulse{0%{box-shadow:0 12px 30px rgba(37,211,102,0.4)}50%{box-shadow:0 12px 40px rgba(37,211,102,0.6)}100%{box-shadow:0 12px 30px rgba(37,211,102,0.4)}}
@@ -48,7 +47,6 @@
   .slider-container{margin:24px 0;background:#f8fffe;padding:20px;border-radius:16px;border:1px solid #ccfbf1}
   input[type=range]{width:100%;height:10px;border-radius:5px;background:#ddd;outline:none}
   input[type=range]::-webkit-slider-thumb{background:var(--accent);width:28px;height:28px;border-radius:50%;cursor:pointer}
-  .existing-hint{background:#e0f2fe;padding:20px;border-radius:16px;margin:24px 0;border-left:6px solid #0d9488}
   .chart-panel{background:#fff;border-radius:16px;padding:24px;box-shadow:var(--shadow);margin-top:24px}
   .age-insight{background:#f0fdf4;padding:24px;border-radius:16px;margin:20px 0;border:1px solid #86efac;font-size:18px}
   .risk-note{background:#fefce8;padding:20px;border-radius:16px;margin:20px 0;border-left:6px solid #f59e0b}
@@ -60,9 +58,10 @@
   .option-card.balanced{background:#f0fdfa;border:3px solid #0d9488}
   .option-card.accelerated{background:#f0fdf4;border:2px solid #16a34a;box-shadow:0 8px 25px rgba(22,163,74,0.2)}
   .star{position:absolute;top:12px;right:12px;font-size:20px}
-  .alloc-row{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
-  .alloc-row > div{flex:1;min-width:100px}
-  .alloc-row label{font-size:13px}
+  .alloc-row{display:flex;gap:10px;align-items:end;margin-top:12px}
+  .alloc-row > div{flex:1}
+  .alloc-row input{width:100%}
+  .alloc-label{font-size:13px;color:#555;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -136,10 +135,17 @@
           </div>
           <div class="muted" style="margin-top:8px" id="selectedProfile">You selected: <strong>Balanced</strong></div>
         </div>
-        <div class="alloc-row">
-          <div><label>Large Cap %</label><input id="lc" type="number" value="45" min="0" max="100"></div>
-          <div><label>Mid Cap %</label><input id="mc" type="number" value="30" min="0" max="100"></div>
-          <div><label>Small Cap %</label><input id="sc" type="number" value="25" min="0" max="100"></div>
+
+        <div style="flex:1;max-width:500px">
+          <label style="font-weight:600">Allocation & Expected Returns</label>
+          <div class="alloc-row">
+            <div><div class="alloc-label">Large Cap %</div><input id="lc" type="number" value="45" min="0" max="100"></div>
+            <div><div class="alloc-label">Mid Cap %</div><input id="mc" type="number" value="30" min="0" max="100"></div>
+            <div><div class="alloc-label">Small Cap %</div><input id="sc" type="number" value="25" min="0" max="100"></div>
+            <div><div class="alloc-label">CAGR %</div><input id="lc_r" type="number" value="10" step="0.5" style="width:70px"></div>
+            <div><div class="alloc-label">CAGR %</div><input id="mc_r" type="number" value="14" step="0.5" style="width:70px"></div>
+            <div><div class="alloc-label">CAGR %</div><input id="sc_r" type="number" value="18" step="0.5" style="width:70px"></div>
+          </div>
         </div>
       </div>
 
@@ -150,7 +156,7 @@
         • Balanced portfolio gives you both: <strong>growth + peace of mind</strong>
       </div>
 
-      <div class="controls">
+      <div class="controls" style="margin-top:24px">
         <div><label>Time Horizon</label>
           <select id="years">
             <option value="3">3 years</option>
@@ -165,9 +171,6 @@
             <option value="30">30 years</option>
           </select>
         </div>
-        <div><label>Large Cap CAGR %</label><input id="lc_r" type="number" value="10" step="0.5"></div>
-        <div><label>Mid Cap CAGR %</label><input id="mc_r" type="number" value="14" step="0.5"></div>
-        <div><label>Small Cap CAGR %</label><input id="sc_r" type="number" value="18" step="0.5"></div>
       </div>
 
       <div style="margin-top:24px;padding:20px;background:#f0f9ff;border-radius:16px">
@@ -187,54 +190,11 @@
         <div><div class="muted">Your Monthly SIP</div><div class="kpi" id="monthlySIP">₹1 L</div></div>
       </div>
 
-      <div id="moneyStory" class="panel" style="display:none;padding:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
-          <div style="text-align:center">
-            <div class="muted">You will invest</div>
-            <div class="kpi" id="totalInvested">₹1.8 Cr</div>
-          </div>
-          <div style="font-size:60px;color:var(--accent)">→</div>
-          <div style="text-align:center">
-            <div class="muted">It becomes</div>
-            <div class="big" id="finalCorpus">₹8.5 Crore</div>
-          </div>
-        </div>
-        <div class="highlight" style="margin-top:16px">
-          <div style="font-size:26px;color:#16a34a" id="wealthCreated">Wealth created: ₹6.7 Crore</div>
-          <div style="font-size:22px" id="multiplier">That’s <strong>4.7×</strong> your investment</div>
-        </div>
-      </div>
-
-      <div id="retirementInsight" class="age-insight" style="display:none">
-        <strong>At age <span id="retireAge">48</span>, your corpus will be <span id="ageCorpus">₹8.5 Crore</span></strong><br>
-        That’s enough for <strong id="passiveIncome">₹2.8 Lakh/month</strong> passive income (after inflation & taxes) for life.
-      </div>
-
-      <div id="fdComparison" class="fd-comparison" style="display:none">
-        <strong>FD vs Equity (after inflation & taxes):</strong><br>
-        Same SIP in FD @ ~5% real return → <span id="fdCorpus">₹3.8 Cr</span><br>
-        Equity → <span id="equityCorpus">₹8.5 Cr</span> → <span class="danger">You’d leave <span id="fdLoss">₹4.7 Cr</span> on the table</span>
-      </div>
-
-      <div id="extraSIP" class="slider-container" style="display:none">
-        <label style="font-size:18px;font-weight:700">What if you add just ₹5,000 more per month?</label>
-        <input type="range" min="0" max="25000" value="5000" step="1000" id="extraSlider">
-        <div style="font-size:22px;margin-top:16px;text-align:center">
-          Extra ₹<span id="extraAmount">5,000</span>/month → <strong id="newCorpus">₹9.5 Crore</strong> 
-          <span style="color:#16a34a">(+<span id="gainAmount">₹1 Cr</span>)</span>
-        </div>
-      </div>
-
-      <div class="existing-hint">
-        <strong>Already investing?</strong><br>
-        You might be leaving serious money on the table.<br>
-        <em>Reply on WhatsApp — I’ll review your portfolio free and see if we can help you get better returns.</em>
-      </div>
-
-      <div id="emergencyFund" class="panel" style="display:none">
-        <strong>Emergency Fund:</strong> 6–12 months expenses<br>
-        <span id="emergencyStatus" style="font-size:18px"></span>
-      </div>
+      <div id="moneyStory" class="panel" style="display:none"></div>
+      <div id="retirementInsight" class="age-insight" style="display:none"></div>
+      <div id="fdComparison" class="fd-comparison" style="display:none"></div>
+      <div id="extraSIP" class="slider-container" style="display:none"></div>
+      <div id="emergencyFund" class="panel" style="display:none"></div>
 
       <div class="panel">
         <h3>Compare Risk Profiles</h3>
@@ -312,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveIncome = () => {
     const income = $('singleInputs').style.display !== 'none' 
       ? +$('incomeSingle').value 
-      : (+$('husband').value || 0) + (+$('wife').value || 0);
+      : (+$('husband').' ).value || 0) + (+$('wife').value || 0);
     userIncome = income;
     localStorage.setItem('sip_income', income);
     if ($('goalIncome')) $('goalIncome').value = income || '';
@@ -359,22 +319,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalInvested = s.sipAmount * 12 * s.y;
     const wealth = s.fv - totalInvested;
     const multiplier = (s.fv / totalInvested).toFixed(1);
-    $('totalInvested').textContent = fmt(totalInvested);
-    $('finalCorpus').textContent = fmt(s.fv);
-    $('wealthCreated').textContent = fmt(wealth);
-    $('multiplier').innerHTML = `That’s <strong>${multiplier}×</strong> your investment`;
+
+    $('moneyStory').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
+        <div style="text-align:center"><div class="muted">You will invest</div><div class="kpi">${fmt(totalInvested)}</div></div>
+        <div style="font-size:60px;color:var(--accent)">→</div>
+        <div style="text-align:center"><div class="muted">It becomes</div><div class="big">${fmt(s.fv)}</div></div>
+      </div>
+      <div class="highlight" style="margin-top:16px">
+        <div style="font-size:26px;color:#16a34a">Wealth created: ${fmt(wealth)}</div>
+        <div style="font-size:22px">That’s <strong>${multiplier}×</strong> your investment</div>
+      </div>
+    `;
 
     const retireAge = s.age + s.y;
-    $('retireAge').textContent = retireAge;
-    $('ageCorpus').textContent = fmt(s.fv);
-    $('passiveIncome').textContent = fmt(s.fv * 0.04 / 12);
+    $('retirementInsight').innerHTML = `<strong>At age ${retireAge}, your corpus will be ${fmt(s.fv)}</strong><br>
+      That’s enough for <strong>${fmt(s.fv * 0.04 / 12)}/month</strong> passive income (after inflation & taxes) for life.`;
     $('retirementInsight').style.display = 'block';
 
-    $('fdCorpus').textContent = fmt(s.fdFV);
-    $('equityCorpus').textContent = fmt(s.fv);
-    $('fdLoss').textContent = fmt(s.fv - s.fdFV);
+    $('fdComparison').innerHTML = `<strong>FD vs Equity (after inflation & taxes):</strong><br>
+      Same SIP in FD @ ~5% real return → ${fmt(s.fdFV)}<br>
+      Equity → ${fmt(s.fv)} → <span class="danger">You’d leave ${fmt(s.fv - s.fdFV)} on the table</span>`;
     $('fdComparison').style.display = 'block';
 
+    // Extra SIP slider
     const extra = +$('extraSlider').value;
     const newSIP = s.sipAmount + extra;
     const newFV = fvSIP(newSIP * s.alloc.lc/100, s.rates.lc, s.y) +
@@ -384,25 +352,20 @@ document.addEventListener('DOMContentLoaded', () => {
     $('newCorpus').textContent = fmt(newFV);
     $('gainAmount').textContent = fmt(newFV - s.fv);
 
+    // Emergency fund
     const needed = s.expense * 9;
-    $('emergencyStatus').innerHTML = s.sipAmount * 12 * 3 >= needed ?
-      '<span style="color:#16a34a">Emergency fund building fast</span>' :
-      '<span style="color:#dc2626">Build 6–12 months expenses first</span>';
+    $('emergencyFund').innerHTML = `<strong>Emergency Fund:</strong> 6–12 months expenses<br>
+      <span style="font-size:18px">${s.sipAmount * 12 * 3 >= needed ? 
+        '<span style="color:#16a34a">Emergency fund building fast</span>' : 
+        '<span style="color:#dc2626">Build 6–12 months expenses first</span>'}</span>`;
+    $('emergencyFund').style.display = 'block';
 
-    // Risk comparison
-    const profiles = [
-      {name:"Conservative", lc:50, mc:30, sc:20},
-      {name:"Balanced", lc:45, mc:30, sc:25},
-      {name:"Aggressive", lc:35, mc:35, sc:30}
-    ];
+    // Risk comparison cards
+    const profiles = [{name:"Conservative", lc:50, mc:30, sc:20}, {name:"Balanced", lc:45, mc:30, sc:25}, {name:"Aggressive", lc:35, mc:35, sc:30}];
     let cards = '';
     profiles.forEach(p => {
-      const fvTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc, s.y) +
-                      fvSIP(s.sipAmount * p.mc/100, s.rates.mc, s.y) +
-                      fvSIP(s.sipAmount * p.sc/100, s.rates.sc, s.y);
-      const bullTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc+4, s.y) +
-                        fvSIP(s.sipAmount * p.mc/100, s.rates.mc+8, s.y) +
-                        fvSIP(s.sipAmount * p.sc/100, s.rates.sc+12, s.y);
+      const fvTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc, s.y) + fvSIP(s.sipAmount * p.mc/100, s.rates.mc, s.y) + fvSIP(s.sipAmount * p.sc/100, s.rates.sc, s.y);
+      const bullTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc+4, s.y) + fvSIP(s.sipAmount * p.mc/100, s.rates.mc+8, s.y) + fvSIP(s.sipAmount * p.sc/100, s.rates.sc+12, s.y);
       const active = p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc;
       cards += `<div class="panel" style="border:${active?'5px solid #0d9488':'1px solid #e2e8f0'}">
         <strong>${p.name}</strong><br><small>L:${p.lc}% M:${p.mc}% S:${p.sc}%</small><br>
@@ -412,31 +375,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     $('compareCards').innerHTML = cards;
 
-    $('selectedProfile').innerHTML = `You selected: <strong>${profiles.find(p => p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc)?.name || 'Custom'}</strong>`;
-
-    // Wealth Chart with Bull Market
+    // Chart
     if (growthChart) growthChart.destroy();
     const labels = Array.from({length: s.y + 1}, (_, i) => i === 0 ? 'Now' : `Year ${i}`);
     const normalData = labels.map((_, i) => fvSIP(s.sipAmount, 14, i));
     const bullData = labels.map((_, i) => fvSIP(s.sipAmount, 20, i));
     growthChart = new Chart($('growthChart'), {
       type: 'line',
-      data: {
-        labels,
-        datasets: [
-          {label: 'Conservative Growth', data: normalData, borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,0.1)', fill: true, tension: 0.4},
-          {label: 'Bull Market Upside', data: bullData, borderColor: '#f59e0b', borderDash: [5,5], backgroundColor: 'rgba(245,158,11,0.05)', fill: false, tension: 0.4}
-        ]
-      },
-      options: {
-        plugins: {
-          tooltip: {callbacks: {label: ctx => fmt(ctx.raw)}}
-        },
-        scales: {y: {ticks: {callback: fmt}}}
-      }
+      data: {labels, datasets: [
+        {label: 'Conservative Growth', data: normalData, borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,0.1)', fill: true, tension: 0.4},
+        {label: 'Bull Market Upside', data: bullData, borderColor: '#f59e0b', borderDash: [6,4], backgroundColor: 'rgba(245,158,11,0.05)', fill: false, tension: 0.4}
+      ]},
+      options: {plugins: {tooltip: {callbacks: {label: ctx => fmt(ctx.raw)}}}, scales: {y: {ticks: {callback: fmt}}}}
     });
 
-    ['moneyStory','extraSIP','emergencyFund'].forEach(id => $(id).style.display = 'block');
+    ['moneyStory','extraSIP'].forEach(id => $(id).style.display = 'block');
 
     if (s.fv > 5e7 && !window.confettiDone) {
       confetti({particleCount: 100, spread: 70, origin: { y: 0.6 }});
@@ -476,54 +429,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const fv20 = fvSIP(min20, 13.5, y);
     const fvReq = fvSIP(required, 14.5, y);
     const fvAcc = fvSIP(accelerated, 15.5, y);
-
     const bull20 = fvSIP(min20, 17.5, y);
     const bullReq = fvSIP(required, 19.5, y);
     const bullAcc = fvSIP(accelerated, 22, y);
 
-    $('goalResult').innerHTML = `
-      <div style="text-align:center;padding:20px">
-        <div class="muted">Required Monthly SIP</div>
-        <div class="big" style="font-size:56px;color:var(--accent)">${fmt(required)}</div>
-        <div style="margin:20px 0">
-          <span class="muted">to achieve</span> 
-          <strong style="font-size:28px">${fmt(target)}</strong> 
-          <span class="muted">in ${y} years</span>
-        </div>
-      </div>
-    `;
+    $('goalResult').innerHTML = `<div style="text-align:center;padding:20px">
+      <div class="muted">Required Monthly SIP</div>
+      <div class="big" style="font-size:56px;color:var(--accent)">${fmt(required)}</div>
+      <div style="margin:20px 0"><span class="muted">to achieve</span> <strong style="font-size:28px">${fmt(target)}</strong> <span class="muted">in ${y} years</span></div>
+    </div>`;
 
     $('goalOptions').innerHTML = `
-      <div class="option-card safe">
-        <strong>Safe & Steady</strong><br>
-        Invest ${fmt(min20)}/month (20% of income) → ${fmt(fv20)} comfortably
-        <div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bull20)}</div>
-      </div>
-      <div class="option-card balanced">
-        <strong>Balanced Growth</strong><br>
-        Invest ${fmt(required)}/month → Hit ${fmt(target)} exactly
-        <div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bullReq)}</div>
-      </div>
-      <div class="option-card accelerated">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <strong>Accelerated Path</strong> <span class="star">★</span><br>
-            Invest ${fmt(accelerated)}/month → ${fmt(target)} in ${Math.round(y*0.82)} years<br>
-            or ${fmt(fvAcc)} in ${y} years
-          </div>
-        </div>
-        <div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bullAcc)}</div>
-      </div>
+      <div class="option-card safe"><strong>Safe & Steady</strong><br>Invest ${fmt(min20)}/month (20% of income) → ${fmt(fv20)} comfortably
+        <div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bull20)}</div></div>
+      <div class="option-card balanced"><strong>Balanced Growth</strong><br>Invest ${fmt(required)}/month → Hit ${fmt(target)} exactly
+        <div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bullReq)}</div></div>
+      <div class="option-card accelerated"><div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>Accelerated Path</strong> <span class="star">★</span><br>Invest ${fmt(accelerated)}/month → ${fmt(target)} in ${Math.round(y*0.82)} years<br>or ${fmt(fvAcc)} in ${y} years</div>
+      </div><div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bullAcc)}</div></div>
       <div style="margin-top:20px;padding:16px;background:#f0fdfa;border-radius:12px;text-align:center;font-size:15px">
-        These are conservative estimates. In strong market cycles, Option 3 has delivered ₹25–35 Cr for many clients.<br>
+        These are conservative estimates. In strong market cycles, Option 3 has delivered exceptional returns over longer time frames.<br>
         Happy to help you choose the perfect mix — just say hi on WhatsApp.
       </div>
     `;
 
     $('goalResult').style.display = 'block';
     $('goalOptions').style.display = 'block';
-    if (cagr > 18) $('cagrWarning').style.display = 'block';
-    else $('cagrWarning').style.display = 'none';
+    $('cagrWarning').style.display = cagr > 18 ? 'block' : 'none';
 
     lastRequiredSIP = required;
     currentTarget = target;

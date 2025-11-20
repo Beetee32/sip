@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Simple SIP Planner — Goal-driven</title>
+<title>Simple SIP Planner — Goal-driven (fixed)</title>
 
 <!-- Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -146,7 +146,7 @@
             <div style="display:flex;gap:8px;align-items:center">
               <select id="manualCompare"><option value="">Compare with...</option><option value="conservative">Conservative</option><option value="balanced">Balanced</option><option value="aggressive">Aggressive</option></select>
               <button id="applyCompare" class="btn">Compare</button>
-              <button id="applyComparisonToPlanner" class="btn ghost" title="Copy comparison SIP into planner">Apply comparison allocation</button>
+              <button id="applyComparisonToPlanner" class="btn ghost" title="Copy comparison allocation into planner">Apply comparison allocation</button>
             </div>
           </div>
           <div id="compareChartContainer" style="margin-top:8px"></div>
@@ -175,7 +175,7 @@
           </div>
           <div style="align-self:end;display:flex;gap:8px">
             <button id="calcGoal" class="btn primary">Calculate Goal SIP</button>
-            <button id="applyGoalToPlanner" class="btn ghost" title="Apply required SIP to planner">Apply required SIP to Planner</button>
+            <button id="applyGoalToPlanner" class="btn ghost" title="Apply required SIP to Planner">Apply required SIP to Planner</button>
             <button id="useActualIncome" class="btn" style="display:none">Use actual income</button>
           </div>
         </div>
@@ -198,7 +198,7 @@
       <div style="margin-top:12px" class="panel">
         <div style="display:flex;align-items:flex-start;gap:12px">
           <div style="font-weight:700">Golden rules</div>
-          <div class="muted"> <small>
+          <div class="muted">
             <ul style="margin:0 0 0 18px">
               <li>Save first, spend later — automate monthly SIPs without fail.</li>
               <li>Invest with a horizon; equities reward time more than timing.</li>
@@ -208,321 +208,358 @@
               <li>Use goal-driven SIPs: define the target, timeline, and expected CAGR.</li>
               <li>Document and save your plan — a written plan improves follow-through.</li>
             </ul>
-          </small></div>
+          </div>
         </div>
       </div>
 
     </div>
-
   </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', function () {
   'use strict';
 
-  // helpers
-  function $(id){ return document.getElementById(id); }
-  function safeLog(){ if(window.console) console.log.apply(console, arguments); }
+  // helper shortcuts
+  function $(id) { return document.getElementById(id); }
+  function safeLog() { if (window.console) console.log.apply(console, arguments); }
 
-  // Indian number formatter with L/Cr shorthand
-  function formatIndian(n, compactForChart){
-    if(n === null || n === undefined || isNaN(n)) return "-";
-    n = Number(n);
-    var abs = Math.abs(n);
-    if(abs >= 10000000){
-      var v = (n / 10000000);
-      return (compactForChart ? v.toFixed(2) + " Cr" : "₹ " + v.toFixed(2) + " Cr");
+  // formatting: Indian L/Cr shorthand
+  function formatIndian(n, compact) {
+    if (n === null || n === undefined || isNaN(n)) return "-";
+    var x = Number(n);
+    var abs = Math.abs(x);
+    if (abs >= 10000000) {
+      var v = x / 10000000;
+      return compact ? v.toFixed(2) + " Cr" : "₹ " + v.toFixed(2) + " Cr";
     }
-    if(abs >= 100000){
-      var v = (n / 100000);
-      return (compactForChart ? v.toFixed(2) + " L" : "₹ " + v.toFixed(2) + " L");
+    if (abs >= 100000) {
+      var v = x / 100000;
+      return compact ? v.toFixed(2) + " L" : "₹ " + v.toFixed(2) + " L";
     }
-    // below 1 lakh show comma formatted full number
-    return (compactForChart ? n.toLocaleString('en-IN') : "₹ " + n.toLocaleString('en-IN'));
+    return compact ? x.toLocaleString('en-IN') : "₹ " + x.toLocaleString('en-IN');
   }
 
-  // raw number normaliser for Excel (remove commas)
-  function toNumber(n){
-    if(n === null || n === undefined) return 0;
-    return Number(String(n).replace(/,/g,'')||0);
-  }
-
-  // FV of SIP
-  function fv_sip(monthly, annualRate, years){
+  // math helpers
+  function fv_sip(monthly, annualRate, years) {
     monthly = Number(monthly) || 0;
     annualRate = Number(annualRate) || 0;
     years = Number(years) || 0;
-    if(monthly <= 0) return 0;
-    var r = annualRate/100/12;
-    var n = years*12;
-    if(Math.abs(r) < 1e-12) return monthly * n;
-    return monthly * ( (Math.pow(1+r, n) - 1) / r ) * (1 + r);
+    if (monthly <= 0) return 0;
+    var r = annualRate / 100 / 12;
+    var n = years * 12;
+    if (Math.abs(r) < 1e-12) return monthly * n;
+    return monthly * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
   }
 
-  function required_sip_for_target(FV, annualCagr, years){
+  function required_sip_for_target(FV, annualCagr, years) {
     FV = Number(FV) || 0;
-    var r = (Number(annualCagr) || 0)/100/12;
+    var r = (Number(annualCagr) || 0) / 100 / 12;
     var n = Number(years) * 12;
-    if(n <= 0) return NaN;
-    if(Math.abs(r) < 1e-12) return FV / n;
-    return FV * r / ( (Math.pow(1+r, n) - 1) * (1 + r) );
+    if (n <= 0) return NaN;
+    if (Math.abs(r) < 1e-12) return FV / n;
+    return FV * r / ((Math.pow(1 + r, n) - 1) * (1 + r));
   }
 
-  // Presets (Large, Mid, Small)
+  // presets
   var presets = {
-    conservative:{lc:50, mc:30, sc:20},
-    balanced:{lc:45, mc:30, sc:25},
-    aggressive:{lc:35, mc:35, sc:30},
-    moreAggressive:{lc:25, mc:45, sc:30}
+    conservative: { lc: 50, mc: 30, sc: 20 },
+    balanced: { lc: 45, mc: 30, sc: 25 },
+    aggressive: { lc: 35, mc: 35, sc: 30 },
+    moreAggressive: { lc: 25, mc: 45, sc: 30 }
   };
 
-  // UI wiring for tabs
-  $('tabPlanner').addEventListener('click', function(){ $('panePlanner').style.display=''; $('paneGoal').style.display='none'; });
-  $('tabGoal').addEventListener('click', function(){ $('panePlanner').style.display='none'; $('paneGoal').style.display=''; });
+  // tabs
+  $('tabPlanner').addEventListener('click', function () {
+    $('panePlanner').style.display = '';
+    $('paneGoal').style.display = 'none';
+  });
+  $('tabGoal').addEventListener('click', function () {
+    $('panePlanner').style.display = 'none';
+    $('paneGoal').style.display = '';
+  });
 
-  // apply preset helper
-  function applyPreset(name){
+  // apply preset
+  function applyPreset(name) {
     var p = presets[name];
-    if(!p) return;
-    $('lc').value = p.lc; $('mc').value = p.mc; $('sc').value = p.sc;
-    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
-    if(name==='conservative') $('presetCons').classList.add('active');
-    if(name==='balanced') $('presetBal').classList.add('active');
-    if(name==='aggressive') $('presetAgg').classList.add('active');
+    if (!p) return;
+    $('lc').value = p.lc;
+    $('mc').value = p.mc;
+    $('sc').value = p.sc;
+    document.querySelectorAll('.seg-btn').forEach(function (b) { b.classList.remove('active'); });
+    if (name === 'conservative') $('presetCons').classList.add('active');
+    if (name === 'balanced') $('presetBal').classList.add('active');
+    if (name === 'aggressive') $('presetAgg').classList.add('active');
     validateAlloc();
     renderPlanner();
   }
-  $('presetCons').addEventListener('click', ()=>applyPreset('conservative'));
-  $('presetBal').addEventListener('click', ()=>applyPreset('balanced'));
-  $('presetAgg').addEventListener('click', ()=>applyPreset('aggressive'));
+  $('presetCons').addEventListener('click', function () { applyPreset('conservative'); });
+  $('presetBal').addEventListener('click', function () { applyPreset('balanced'); });
+  $('presetAgg').addEventListener('click', function () { applyPreset('aggressive'); });
+  $('presetBal').classList.add('active');
 
-  // allocation validation
-  function validateAlloc(){
-    var lc = Number($('lc').value||0), mc = Number($('mc').value||0), sc = Number($('sc').value||0);
+  // validate allocation sum
+  function validateAlloc() {
+    var lc = Number($('lc').value || 0);
+    var mc = Number($('mc').value || 0);
+    var sc = Number($('sc').value || 0);
     var sum = lc + mc + sc;
-    var warnEl = $('allocWarning');
-    if(sum !== 100){
-      warnEl.innerHTML = '<span class="error">Allocations must sum to 100%. Current: ' + sum + '%</span>';
+    var warn = $('allocWarning');
+    if (sum !== 100) {
+      warn.innerHTML = '<span class="error">Allocations must sum to 100%. Current: ' + sum + '%</span>';
       return false;
     } else {
-      warnEl.innerHTML = '<span class="success">Allocation sums to 100%</span>';
+      warn.innerHTML = '<span class="success">Allocation sums to 100%</span>';
       return true;
     }
   }
-  document.querySelectorAll('#lc,#mc,#sc').forEach(function(el){ el.addEventListener('input', validateAlloc); });
-  // initialize presets state
-  $('presetBal').classList.add('active');
+  document.querySelectorAll('#lc,#mc,#sc').forEach(function (el) { el.addEventListener('input', validateAlloc); });
 
-  // read planner state (supports appliedGoalSIP override)
-  function getPlannerState(){
-    var husband = Number($('husband').value||0);
-    var wife = Number($('wife').value||0);
-    var house = Number($('house').value||0);
-    var emi = Number($('emi').value||0);
-    var misc = Number($('misc').value||0);
+  // get planner state (supports optional override from goal)
+  function getPlannerState() {
+    var husband = Number($('husband').value || 0);
+    var wife = Number($('wife').value || 0);
+    var house = Number($('house').value || 0);
+    var emi = Number($('emi').value || 0);
+    var misc = Number($('misc').value || 0);
     var incomeTotal = husband + wife;
     var expenseTotal = house + emi + misc;
     var actualInvestable = Math.max(0, incomeTotal - expenseTotal);
 
-    // if goal applied override exists, use that as investable
     var investable = (window._appliedGoalSIP !== undefined && window._appliedGoalSIP !== null) ? Number(window._appliedGoalSIP) : actualInvestable;
 
-    var lc = Number($('lc').value||0), mc = Number($('mc').value||0), sc = Number($('sc').value||0);
+    var lc = Number($('lc').value || 0);
+    var mc = Number($('mc').value || 0);
+    var sc = Number($('sc').value || 0);
     var allocTotal = lc + mc + sc;
-    var years = Number($('years').value||10);
-    var lc_r = Number($('lc_r').value||0), mc_r = Number($('mc_r').value||0), sc_r = Number($('sc_r').value||0);
-    var lc_sip = investable * (lc/100), mc_sip = investable * (mc/100), sc_sip = investable * (sc/100);
-    var fv_lc = fv_sip(lc_sip, lc_r, years), fv_mc = fv_sip(mc_sip, mc_r, years), fv_sc = fv_sip(sc_sip, sc_r, years);
+    var years = Number($('years').value || 10);
+    var lc_r = Number($('lc_r').value || 0);
+    var mc_r = Number($('mc_r').value || 0);
+    var sc_r = Number($('sc_r').value || 0);
+
+    var lc_sip = investable * (lc / 100);
+    var mc_sip = investable * (mc / 100);
+    var sc_sip = investable * (sc / 100);
+    var fv_lc = fv_sip(lc_sip, lc_r, years);
+    var fv_mc = fv_sip(mc_sip, mc_r, years);
+    var fv_sc = fv_sip(sc_sip, sc_r, years);
     var fv_total = fv_lc + fv_mc + fv_sc;
+
     return {
-      inputs:{husband,wife,house,emi,misc,lc,mc,sc,lc_r,mc_r,sc_r,years,actualInvestable},
-      totals:{incomeTotal,expenseTotal,investable,allocTotal,total_sip:(lc_sip+mc_sip+sc_sip)},
-      outputs:{lc_sip,mc_sip,sc_sip,fv_lc,fv_mc,fv_sc,fv_total}
+      inputs: { husband: husband, wife: wife, house: house, emi: emi, misc: misc, lc: lc, mc: mc, sc: sc, lc_r: lc_r, mc_r: mc_r, sc_r: sc_r, years: years, actualInvestable: actualInvestable },
+      totals: { incomeTotal: incomeTotal, expenseTotal: expenseTotal, investable: investable, allocTotal: allocTotal, total_sip: lc_sip + mc_sip + sc_sip },
+      outputs: { lc_sip: lc_sip, mc_sip: mc_sip, sc_sip: sc_sip, fv_lc: fv_lc, fv_mc: fv_mc, fv_sc: fv_sc, fv_total: fv_total }
     };
   }
 
-  // Charts
-  var allocChart=null, fvChart=null, compareChart=null;
-  function renderCharts(state, compareState){
+  // charts
+  var allocChart = null;
+  var fvChart = null;
+  var compareChart = null;
+  function renderCharts(state, compareState) {
     try {
       // allocation pie
       var aCtx = $('allocChart').getContext('2d');
-      if(allocChart) allocChart.destroy();
+      if (allocChart) allocChart.destroy();
       allocChart = new Chart(aCtx, {
-        type:'pie',
-        data:{ labels:['Large','Mid','Small'], datasets:[{data:[state.inputs.lc,state.inputs.mc,state.inputs.sc], backgroundColor:['#0b74de','#0a5fb2','#ff7a59']}] },
-        options:{ plugins:{legend:{position:'bottom'}}}
+        type: 'pie',
+        data: {
+          labels: ['Large', 'Mid', 'Small'],
+          datasets: [{ data: [state.inputs.lc, state.inputs.mc, state.inputs.sc], backgroundColor: ['#0b74de', '#0a5fb2', '#ff7a59'] }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
       });
 
       // fv bar
       var fCtx = $('fvChart').getContext('2d');
-      if(fvChart) fvChart.destroy();
+      if (fvChart) fvChart.destroy();
       fvChart = new Chart(fCtx, {
-        type:'bar',
-        data:{ labels:['Large','Mid','Small'], datasets:[{label:'Projected FV (nominal)', data:[state.outputs.fv_lc,state.outputs.fv_mc,state.outputs.fv_sc]}] },
-        options:{ plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:function(v){ return (v>=100000? (v/100000).toFixed(1)+'L' : v); } } } }, interaction:{mode:'index',intersect:false}, plugins:{tooltip:{callbacks:{label:function(ctx){ return formatIndian(ctx.raw,false); }}}}
+        type: 'bar',
+        data: {
+          labels: ['Large', 'Mid', 'Small'],
+          datasets: [{ label: 'Projected FV', data: [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc], backgroundColor: ['#0b74de', '#0a5fb2', '#ff7a59'] }]
+        },
+        options: {
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { return formatIndian(ctx.raw, false); } } } },
+          scales: { y: { ticks: { callback: function (v) { return (v >= 100000 ? (v / 100000).toFixed(1) + 'L' : v); } } }
+        }
       });
 
       // compare chart
-      if(compareState){
+      if (compareState) {
         var container = $('compareChartContainer');
         container.innerHTML = '<canvas id="compareChart" height="220"></canvas>';
         var cCtx = $('compareChart').getContext('2d');
-        if(compareChart) compareChart.destroy();
+        if (compareChart) compareChart.destroy();
         compareChart = new Chart(cCtx, {
-          type:'bar',
-          data:{ labels:['Large','Mid','Small'], datasets:[
-            {label:'Current', data:[state.outputs.fv_lc,state.outputs.fv_mc,state.outputs.fv_sc], backgroundColor:'#0b74de'},
-            {label:'Comparison', data:[compareState.outputs.fv_lc,compareState.outputs.fv_mc,compareState.outputs.fv_sc], backgroundColor:'#ff7a59'}
-          ]},
-          options:{ plugins:{legend:{position:'bottom'}}, scales:{ y:{ ticks:{ callback:function(v){ return (v>=100000? (v/100000).toFixed(1)+'L' : v); } } } }, plugins:{tooltip:{callbacks:{label:function(ctx){ return formatIndian(ctx.raw,false); }}}}
+          type: 'bar',
+          data: {
+            labels: ['Large', 'Mid', 'Small'],
+            datasets: [
+              { label: 'Current', data: [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc], backgroundColor: '#0b74de' },
+              { label: 'Comparison', data: [compareState.outputs.fv_lc, compareState.outputs.fv_mc, compareState.outputs.fv_sc], backgroundColor: '#ff7a59' }
+            ]
+          },
+          options: {
+            plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function (ctx) { return formatIndian(ctx.raw, false); } } } },
+            scales: { y: { ticks: { callback: function (v) { return (v >= 100000 ? (v / 100000).toFixed(1) + 'L' : v); } } }
+          }
         });
       } else {
         $('compareChartContainer').innerHTML = '';
       }
-    } catch(e){ safeLog('chartErr', e); }
+    } catch (e) {
+      safeLog('chart error', e);
+    }
   }
 
-  // Render planner results and compare UI
-  function renderPlanner(){
+  // render planner and comparison UI
+  function renderPlanner() {
     try {
-      if(!validateAlloc()) { $('plannerResults').innerHTML = '<div class="panel error">Please correct allocation to sum 100% to calculate.</div>'; $('compareCards').innerHTML=''; $('compareChartContainer').innerHTML=''; return; }
+      if (!validateAlloc()) {
+        $('plannerResults').innerHTML = '<div class="panel error">Please correct allocation to sum 100% to calculate.</div>';
+        $('compareCards').innerHTML = '';
+        $('compareChartContainer').innerHTML = '';
+        return;
+      }
       var s = getPlannerState();
       var html = '';
       html += '<div class="panel"><h3 style="margin:0 0 8px">Quick summary</h3>';
-      html += '<div class="small">Total income: <span class="kpi">' + formatIndian(s.totals.incomeTotal,false) + '</span></div>';
-      html += '<div class="small">Expenses: <span class="kpi">' + formatIndian(s.totals.expenseTotal,false) + '</span></div>';
-      html += '<div class="small">Investable per month: <span class="kpi">' + formatIndian(s.totals.investable,false) + '</span></div>';
+      html += '<div class="small">Total income: <span class="kpi">' + formatIndian(s.totals.incomeTotal, false) + '</span></div>';
+      html += '<div class="small">Expenses: <span class="kpi">' + formatIndian(s.totals.expenseTotal, false) + '</span></div>';
+      html += '<div class="small">Investable per month: <span class="kpi">' + formatIndian(s.totals.investable, false) + '</span></div>';
       html += '<div class="small">Allocation total: <span class="accent-text">' + s.totals.allocTotal + '%</span></div></div>';
 
       html += '<div class="panel"><h4 style="margin:0 0 8px">Monthly SIP split</h4>';
-      html += '<div class="small">Large: <span class="kpi">' + formatIndian(s.outputs.lc_sip,false) + '</span></div>';
-      html += '<div class="small">Mid: <span class="kpi">' + formatIndian(s.outputs.mc_sip,false) + '</span></div>';
-      html += '<div class="small">Small: <span class="kpi">' + formatIndian(s.outputs.sc_sip,false) + '</span></div>';
+      html += '<div class="small">Large: <span class="kpi">' + formatIndian(s.outputs.lc_sip, false) + '</span></div>';
+      html += '<div class="small">Mid: <span class="kpi">' + formatIndian(s.outputs.mc_sip, false) + '</span></div>';
+      html += '<div class="small">Small: <span class="kpi">' + formatIndian(s.outputs.sc_sip, false) + '</span></div>';
       html += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
-      html += '<div class="small">Total SIP monthly: <span class="kpi">' + formatIndian(s.totals.total_sip,false) + '</span></div></div>';
+      html += '<div class="small">Total SIP monthly: <span class="kpi">' + formatIndian(s.totals.total_sip, false) + '</span></div></div>';
 
       html += '<div class="panel"><h4 style="margin:0 0 8px">Projection (' + s.inputs.years + ' yrs)</h4>';
-      html += '<div class="small">Large FV: <span class="kpi">' + formatIndian(s.outputs.fv_lc,false) + '</span> at ' + s.inputs.lc_r + '% p.a.</div>';
-      html += '<div class="small">Mid FV: <span class="kpi">' + formatIndian(s.outputs.fv_mc,false) + '</span> at ' + s.inputs.mc_r + '% p.a.</div>';
-      html += '<div class="small">Small FV: <span class="kpi">' + formatIndian(s.outputs.fv_sc,false) + '</span> at ' + s.inputs.sc_r + '% p.a.</div>';
+      html += '<div class="small">Large FV: <span class="kpi">' + formatIndian(s.outputs.fv_lc, false) + '</span> at ' + s.inputs.lc_r + '% p.a.</div>';
+      html += '<div class="small">Mid FV: <span class="kpi">' + formatIndian(s.outputs.fv_mc, false) + '</span> at ' + s.inputs.mc_r + '% p.a.</div>';
+      html += '<div class="small">Small FV: <span class="kpi">' + formatIndian(s.outputs.fv_sc, false) + '</span> at ' + s.inputs.sc_r + '% p.a.</div>';
       html += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
-      html += '<div class="small"><strong>Total projected corpus: ' + formatIndian(s.outputs.fv_total,false) + '</strong></div></div>';
+      html += '<div class="small"><strong>Total projected corpus: ' + formatIndian(s.outputs.fv_total, false) + '</strong></div></div>';
 
       $('plannerResults').innerHTML = html;
 
-      // pick compare preset (next more aggressive)
-      function presetDiff(p){ return Math.abs(p.lc - s.inputs.lc) + Math.abs(p.mc - s.inputs.mc) + Math.abs(p.sc - s.inputs.sc); }
-      var best = ['conservative','balanced','aggressive'].reduce(function(acc,k){ var val = presetDiff(presets[k]); return val < acc.val ? {k:k, val:val} : acc; }, {k:'balanced', val:1e9}).k;
+      // choose compare preset (next more aggressive)
+      function presetDiff(p) { return Math.abs(p.lc - s.inputs.lc) + Math.abs(p.mc - s.inputs.mc) + Math.abs(p.sc - s.inputs.sc); }
+      var best = ['conservative', 'balanced', 'aggressive'].reduce(function (acc, k) {
+        var val = presetDiff(presets[k]);
+        return val < acc.val ? { k: k, val: val } : acc;
+      }, { k: 'balanced', val: 1e9 }).k;
       var comparePreset = (best === 'conservative') ? 'balanced' : (best === 'balanced') ? 'aggressive' : 'moreAggressive';
       var cp = presets[comparePreset];
 
-      // build comparison state using same investable amount as current (unless goal override exists)
-      var compareState = { inputs:{}, outputs:{} };
+      // build compare state (use same investable as planner)
+      var compareState = { inputs: {}, outputs: {} };
       var inv = s.totals.investable;
-      compareState.inputs.lc = cp.lc; compareState.inputs.mc = cp.mc; compareState.inputs.sc = cp.sc;
-      compareState.inputs.lc_r = s.inputs.lc_r; compareState.inputs.mc_r = s.inputs.mc_r; compareState.inputs.sc_r = s.inputs.sc_r;
+      compareState.inputs.lc = cp.lc;
+      compareState.inputs.mc = cp.mc;
+      compareState.inputs.sc = cp.sc;
+      compareState.inputs.lc_r = s.inputs.lc_r;
+      compareState.inputs.mc_r = s.inputs.mc_r;
+      compareState.inputs.sc_r = s.inputs.sc_r;
       compareState.inputs.years = s.inputs.years;
-      compareState.outputs.fv_lc = fv_sip(inv*(cp.lc/100), compareState.inputs.lc_r, compareState.inputs.years);
-      compareState.outputs.fv_mc = fv_sip(inv*(cp.mc/100), compareState.inputs.mc_r, compareState.inputs.years);
-      compareState.outputs.fv_sc = fv_sip(inv*(cp.sc/100), compareState.inputs.sc_r, compareState.inputs.years);
+      compareState.outputs.fv_lc = fv_sip(inv * (cp.lc / 100), compareState.inputs.lc_r, compareState.inputs.years);
+      compareState.outputs.fv_mc = fv_sip(inv * (cp.mc / 100), compareState.inputs.mc_r, compareState.inputs.years);
+      compareState.outputs.fv_sc = fv_sip(inv * (cp.sc / 100), compareState.inputs.sc_r, compareState.inputs.years);
       compareState.outputs.fv_total = compareState.outputs.fv_lc + compareState.outputs.fv_mc + compareState.outputs.fv_sc;
 
-      // compare cards + delta
+      // cards and delta
       var delta = compareState.outputs.fv_total - s.outputs.fv_total;
       var deltaPct = s.outputs.fv_total ? (delta / s.outputs.fv_total * 100) : 0;
       var cardsHtml = '';
-      cardsHtml += '<div class="panel"><strong>Current</strong><div style="margin-top:6px">SIP: ' + formatIndian(s.totals.total_sip,false) + '</div><div>Total FV: ' + formatIndian(s.outputs.fv_total,false) + '</div></div>';
-      cardsHtml += '<div class="panel"><strong>' + (comparePreset==='moreAggressive' ? 'More Aggressive' : (comparePreset.charAt(0).toUpperCase()+comparePreset.slice(1))) + '</strong><div style="margin-top:6px">SIP: ' + formatIndian(inv,false) + ' (allocated)</div><div>Total FV: ' + formatIndian(compareState.outputs.fv_total,false) + '</div></div>';
-      cardsHtml += '<div class="panel" style="background:#fff8ec"><strong>Delta</strong><div style="margin-top:6px">' + (delta >= 0 ? '+' : '') + formatIndian(delta,false) + ' (' + deltaPct.toFixed(1) + '%)</div></div>';
+      cardsHtml += '<div class="panel"><strong>Current</strong><div style="margin-top:6px">SIP: ' + formatIndian(s.totals.total_sip, false) + '</div><div>Total FV: ' + formatIndian(s.outputs.fv_total, false) + '</div></div>';
+      cardsHtml += '<div class="panel"><strong>' + (comparePreset === 'moreAggressive' ? 'More Aggressive' : (comparePreset.charAt(0).toUpperCase() + comparePreset.slice(1))) + '</strong><div style="margin-top:6px">SIP: ' + formatIndian(inv, false) + ' (allocated)</div><div>Total FV: ' + formatIndian(compareState.outputs.fv_total, false) + '</div></div>';
+      cardsHtml += '<div class="panel" style="background:#fff8ec"><strong>Delta</strong><div style="margin-top:6px">' + (delta >= 0 ? '+' : '') + formatIndian(delta, false) + ' (' + deltaPct.toFixed(1) + '%)</div></div>';
       $('compareCards').innerHTML = cardsHtml;
 
-      // render charts
       renderCharts(s, compareState);
 
-      // store states for export / apply
       window._plannerState = { s: s, compare: compareState, comparePreset: comparePreset };
-
-    } catch(e){ safeLog('renderPlanner error', e); $('plannerResults').innerHTML = '<div class="panel error">Calculation failed. See console.</div>'; }
+    } catch (e) {
+      safeLog('renderPlanner err', e);
+      $('plannerResults').innerHTML = '<div class="panel error">Calculation failed. See console.</div>';
+    }
   }
 
-  // Calculate button
+  // calculate button
   $('calc').addEventListener('click', renderPlanner);
 
-  // Manual compare apply
-  $('applyCompare').addEventListener('click', function(){
+  // manual compare
+  $('applyCompare').addEventListener('click', function () {
     var sel = $('manualCompare').value;
-    if(!sel){ alert('Choose a preset to compare.'); return; }
-    if(!validateAlloc()){ alert('Fix allocation to 100% first.'); return; }
+    if (!sel) { alert('Choose a preset to compare.'); return; }
+    if (!validateAlloc()) { alert('Fix allocation to 100% first.'); return; }
     var s = getPlannerState();
     var cp = presets[sel];
-    var compareState = { inputs:{}, outputs:{} };
+    var compareState = { inputs: {}, outputs: {} };
     var inv = s.totals.investable;
     compareState.inputs.lc = cp.lc; compareState.inputs.mc = cp.mc; compareState.inputs.sc = cp.sc;
     compareState.inputs.lc_r = s.inputs.lc_r; compareState.inputs.mc_r = s.inputs.mc_r; compareState.inputs.sc_r = s.inputs.sc_r;
     compareState.inputs.years = s.inputs.years;
-    compareState.outputs.fv_lc = fv_sip(inv*(cp.lc/100), compareState.inputs.lc_r, compareState.inputs.years);
-    compareState.outputs.fv_mc = fv_sip(inv*(cp.mc/100), compareState.inputs.mc_r, compareState.inputs.years);
-    compareState.outputs.fv_sc = fv_sip(inv*(cp.sc/100), compareState.inputs.sc_r, compareState.inputs.years);
+    compareState.outputs.fv_lc = fv_sip(inv * (cp.lc / 100), compareState.inputs.lc_r, compareState.inputs.years);
+    compareState.outputs.fv_mc = fv_sip(inv * (cp.mc / 100), compareState.inputs.mc_r, compareState.inputs.years);
+    compareState.outputs.fv_sc = fv_sip(inv * (cp.sc / 100), compareState.inputs.sc_r, compareState.inputs.years);
     compareState.outputs.fv_total = compareState.outputs.fv_lc + compareState.outputs.fv_mc + compareState.outputs.fv_sc;
     window._plannerState = { s: s, compare: compareState, comparePreset: sel };
-    // update compare cards and charts
     renderPlanner();
   });
 
-  // Apply comparison allocation to planner (copies allocation percentages)
-  $('applyComparisonToPlanner').addEventListener('click', function(){
+  // apply comparison allocation to planner
+  $('applyComparisonToPlanner').addEventListener('click', function () {
     var st = window._plannerState;
-    if(!st || !st.comparePreset){ alert('No comparison available. Click Calculate first.'); return; }
-    var presetName = st.comparePreset;
-    var p = presets[presetName] || presets['aggressive'];
+    if (!st || !st.comparePreset) { alert('No comparison available. Click Calculate first.'); return; }
+    var p = presets[st.comparePreset] || presets.aggressive;
     $('lc').value = p.lc; $('mc').value = p.mc; $('sc').value = p.sc;
     validateAlloc();
     renderPlanner();
   });
 
-  // Goal planner compute
-  $('calcGoal').addEventListener('click', function(){
+  // goal calculation
+  $('calcGoal').addEventListener('click', function () {
     try {
-      var FV = Number($('target').value||0);
-      var years = Number($('goalYears').value||0);
-      var cagr = Number($('goalCagr').value||0);
-      var infl = Number($('goalInfl').value||0);
-      if(years <= 0){ $('goalResult').innerHTML = '<div class="error panel">Years must be > 0</div>'; return; }
+      var FV = Number($('target').value || 0);
+      var years = Number($('goalYears').value || 0);
+      var cagr = Number($('goalCagr').value || 0);
+      var infl = Number($('goalInfl').value || 0);
+      if (years <= 0) { $('goalResult').innerHTML = '<div class="error panel">Years must be > 0</div>'; return; }
       var sip = required_sip_for_target(FV, cagr, years);
       var months = years * 12;
       var invested = sip * months;
-      var realTarget = FV / Math.pow(1 + infl/100, years);
-      var html = '<div class="small"><strong>Target (nominal):</strong> ' + formatIndian(FV,false) + '</div>';
-      html += '<div class="small"><strong>In today\'s rupees:</strong> ' + formatIndian(realTarget,false) + ' (inflation ' + infl + '%)</div>';
-      html += '<div class="small"><strong>Required monthly SIP:</strong> ' + formatIndian(sip,false) + '</div>';
-      html += '<div class="small"><strong>Total invested:</strong> ' + formatIndian(invested,false) + '</div>';
-      // affordability check against planner investable
+      var realTarget = FV / Math.pow(1 + infl / 100, years);
+      var html = '<div class="small"><strong>Target (nominal):</strong> ' + formatIndian(FV, false) + '</div>';
+      html += '<div class="small"><strong>In today\'s rupees:</strong> ' + formatIndian(realTarget, false) + ' (inflation ' + infl + '%)</div>';
+      html += '<div class="small"><strong>Required monthly SIP:</strong> ' + formatIndian(sip, false) + '</div>';
+      html += '<div class="small"><strong>Total invested:</strong> ' + formatIndian(invested, false) + '</div>';
       var planner = getPlannerState();
-      var affordability = (planner.totals.investable >= sip) ? '<span class="success">On track</span>' : '<span class="error">Shortfall: ' + formatIndian(sip - planner.totals.investable,false) + ' / month</span>';
+      var affordability = (planner.totals.investable >= sip) ? '<span class="success">On track</span>' : '<span class="error">Shortfall: ' + formatIndian(sip - planner.totals.investable, false) + ' / month</span>';
       html += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
       html += '<div class="small"><strong>Affordability:</strong> ' + affordability + '</div>';
       html += '<div style="margin-top:8px"><button id="applyReqSIP" class="btn primary">Apply required SIP to Planner</button> <small class="muted">This will simulate the planner with required SIP as investable amount (temporary)</small></div>';
       $('goalResult').innerHTML = html;
 
-      // attach dynamic handler
+      // dynamic handler
       var btn = $('applyReqSIP');
-      if(btn){
-        btn.addEventListener('click', function(){
+      if (btn) {
+        btn.addEventListener('click', function () {
           window._appliedGoalSIP = sip;
           $('useActualIncome').style.display = '';
           renderPlanner();
           alert('Applied required SIP as monthly investable amount in Planner (temporary). Use "Use actual income" to revert.');
         });
       }
-      // store goal state
-      window._goalState = { inputs:{FV,years,cagr,infl}, outputs:{sip,invested,realTarget} };
-    } catch(e){ safeLog('goalErr', e); $('goalResult').innerHTML = '<div class="panel error">Goal calculation failed. Check inputs.</div>'; }
+      window._goalState = { inputs: { FV: FV, years: years, cagr: cagr, infl: infl }, outputs: { sip: sip, invested: invested, realTarget: realTarget } };
+    } catch (e) { safeLog('goalErr', e); $('goalResult').innerHTML = '<div class="panel error">Goal calculation failed. Check inputs.</div>'; }
   });
 
-  // Apply required SIP from goal directly (button)
-  $('applyGoalToPlanner').addEventListener('click', function(){
-    if(!window._goalState){ alert('Calculate goal first'); return; }
+  // apply required SIP to planner (alternate button)
+  $('applyGoalToPlanner').addEventListener('click', function () {
+    if (!window._goalState) { alert('Calculate goal first'); return; }
     var sip = window._goalState.outputs.sip;
     window._appliedGoalSIP = sip;
     $('useActualIncome').style.display = '';
@@ -530,23 +567,23 @@ document.addEventListener('DOMContentLoaded', function(){
     alert('Applied required SIP as monthly investable amount in Planner (temporary). Use "Use actual income" to revert.');
   });
 
-  // Use actual income to revert override
-  $('useActualIncome').addEventListener('click', function(){
+  // revert override
+  $('useActualIncome').addEventListener('click', function () {
     window._appliedGoalSIP = null;
     $('useActualIncome').style.display = 'none';
     renderPlanner();
   });
 
-  // Reset
-  $('resetBtn').addEventListener('click', function(){
+  // reset
+  $('resetBtn').addEventListener('click', function () {
     var defaults = {
-      husband:100000, wife:100000, house:60000, emi:20000, misc:20000,
-      lc:9, mc:12, sc:16,
-      lc_r:9, mc_r:12, sc_r:16, years:10,
-      target:10000000, goalYears:15, goalCagr:12, goalInfl:5
+      husband: 100000, wife: 100000, house: 60000, emi: 20000, misc: 20000,
+      lc: 9, mc: 12, sc: 16,
+      lc_r: 9, mc_r: 12, sc_r: 16, years: 10,
+      target: 10000000, goalYears: 15, goalCagr: 12, goalInfl: 5
     };
-    Object.keys(defaults).forEach(function(k){ if($(k)) $(k).value = defaults[k]; });
-    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+    Object.keys(defaults).forEach(function (k) { if ($(k)) $(k).value = defaults[k]; });
+    document.querySelectorAll('.seg-btn').forEach(function (b) { b.classList.remove('active'); });
     $('presetBal').classList.add('active');
     window._appliedGoalSIP = null;
     $('useActualIncome').style.display = 'none';
@@ -554,13 +591,13 @@ document.addEventListener('DOMContentLoaded', function(){
     renderPlanner();
   });
 
-  // Download XLSX (raw numbers + formatted)
-  $('downloadBtn').addEventListener('click', function(){
+  // download XLSX
+  $('downloadBtn').addEventListener('click', function () {
     try {
       var st = window._plannerState;
       var goal = window._goalState || {};
-      var sum = [["Field","Value"]];
-      if(st && st.s){
+      var sum = [["Field", "Value"]];
+      if (st && st.s) {
         var s = st.s;
         sum.push(["Husband income", s.inputs.husband]);
         sum.push(["Wife income", s.inputs.wife]);
@@ -569,35 +606,43 @@ document.addEventListener('DOMContentLoaded', function(){
         sum.push(["Misc", s.inputs.misc]);
         sum.push(["Total investable (used)", s.totals.investable]);
         sum.push([]);
-        sum.push(["Category","Percent","Monthly SIP (raw)","Monthly SIP (fmt)"]);
-        sum.push(["Large", s.inputs.lc, s.outputs.lc_sip, formatIndian(s.outputs.lc_sip,false)]);
-        sum.push(["Mid", s.inputs.mc, s.outputs.mc_sip, formatIndian(s.outputs.mc_sip,false)]);
-        sum.push(["Small", s.inputs.sc, s.outputs.sc_sip, formatIndian(s.outputs.sc_sip,false)]);
-        sum.push(["Total SIP monthly (raw)", s.totals.total_sip, formatIndian(s.totals.total_sip,false)]);
+        sum.push(["Category", "Percent", "Monthly SIP (raw)", "Monthly SIP (fmt)"]);
+        sum.push(["Large", s.inputs.lc, s.outputs.lc_sip, formatIndian(s.outputs.lc_sip, false)]);
+        sum.push(["Mid", s.inputs.mc, s.outputs.mc_sip, formatIndian(s.outputs.mc_sip, false)]);
+        sum.push(["Small", s.inputs.sc, s.outputs.sc_sip, formatIndian(s.outputs.sc_sip, false)]);
+        sum.push(["Total SIP monthly (raw)", s.totals.total_sip, formatIndian(s.totals.total_sip, false)]);
         sum.push([]);
         sum.push(["Projection years", s.inputs.years]);
-        sum.push(["Large FV (raw)", s.outputs.fv_lc, formatIndian(s.outputs.fv_lc,false)]);
-        sum.push(["Mid FV (raw)", s.outputs.fv_mc, formatIndian(s.outputs.fv_mc,false)]);
-        sum.push(["Small FV (raw)", s.outputs.fv_sc, formatIndian(s.outputs.fv_sc,false)]);
-        sum.push(["Total projected corpus (raw)", s.outputs.fv_total, formatIndian(s.outputs.fv_total,false)]);
+        sum.push(["Large FV (raw)", s.outputs.fv_lc, formatIndian(s.outputs.fv_lc, false)]);
+        sum.push(["Mid FV (raw)", s.outputs.fv_mc, formatIndian(s.outputs.fv_mc, false)]);
+        sum.push(["Small FV (raw)", s.outputs.fv_sc, formatIndian(s.outputs.fv_sc, false)]);
+        sum.push(["Total projected corpus (raw)", s.outputs.fv_total, formatIndian(s.outputs.fv_total, false)]);
       } else sum.push(["No planner data"]);
 
-      var goalSheet = [["Field","Value"]];
-      if(goal.inputs){
-        goalSheet.push(["Target (raw)", goal.inputs.FV, formatIndian(goal.inputs.FV,false)]);
+      var goalSheet = [["Field", "Value"]];
+      if (goal.inputs) {
+        goalSheet.push(["Target (raw)", goal.inputs.FV, formatIndian(goal.inputs.FV, false)]);
         goalSheet.push(["Years", goal.inputs.years]);
-        goalSheet.push(["Required monthly SIP (raw)", goal.outputs.sip, formatIndian(goal.outputs.sip,false)]);
+        goalSheet.push(["Required monthly SIP (raw)", goal.outputs.sip, formatIndian(goal.outputs.sip, false)]);
       } else goalSheet.push(["No goal data"]);
 
-      var comp = [["Category","Current FV (raw)","Formatted","Compare FV (raw)","Formatted"]];
-      if(st && st.compare){
-        comp.push(["Large", st.s.outputs.fv_lc, formatIndian(st.s.outputs.fv_lc,false), st.compare.outputs.fv_lc, formatIndian(st.compare.outputs.fv_lc,false)]);
-        comp.push(["Mid", st.s.outputs.fv_mc, formatIndian(st.s.outputs.fv_mc,false), st.compare.outputs.fv_mc, formatIndian(st.compare.outputs.fv_mc,false)]);
-        comp.push(["Small", st.s.outputs.fv_sc, formatIndian(st.s.outputs.fv_sc,false), st.compare.outputs.fv_sc, formatIndian(st.compare.outputs.fv_sc,false)]);
-        comp.push(["Total", st.s.outputs.fv_total, formatIndian(st.s.outputs.fv_total,false), st.compare.outputs.fv_total, formatIndian(st.compare.outputs.fv_total,false)]);
+      var comp = [["Category", "Current FV (raw)", "Formatted", "Compare FV (raw)", "Formatted"]];
+      if (st && st.compare) {
+        comp.push(["Large", st.s.outputs.fv_lc, formatIndian(st.s.outputs.fv_lc, false), st.compare.outputs.fv_lc, formatIndian(st.compare.outputs.fv_lc, false)]);
+        comp.push(["Mid", st.s.outputs.fv_mc, formatIndian(st.s.outputs.fv_mc, false), st.compare.outputs.fv_mc, formatIndian(st.compare.outputs.fv_mc, false)]);
+        comp.push(["Small", st.s.outputs.fv_sc, formatIndian(st.s.outputs.fv_sc, false), st.compare.outputs.fv_sc, formatIndian(st.compare.outputs.fv_sc, false)]);
+        comp.push(["Total", st.s.outputs.fv_total, formatIndian(st.s.outputs.fv_total, false), st.compare.outputs.fv_total, formatIndian(st.compare.outputs.fv_total, false)]);
       } else comp.push(["No compare data"]);
 
-      function normRows(rows){ return rows.map(r => r.map(c => (typeof c === 'number' ? c : (typeof c === 'string' && c.replace(/,/g,'').match(/^\d+(\.\d+)?$/) ? Number(c.replace(/,/g,'')) : c)))); }
+      function normRows(rows) {
+        return rows.map(function (r) {
+          return r.map(function (c) {
+            if (typeof c === 'number') return c;
+            if (typeof c === 'string' && c.replace(/,/g, '').match(/^\d+(\.\d+)?$/)) return Number(c.replace(/,/g, ''));
+            return c;
+          });
+        });
+      }
       var ws1 = XLSX.utils.aoa_to_sheet(normRows(sum));
       var ws2 = XLSX.utils.aoa_to_sheet(normRows(goalSheet));
       var ws3 = XLSX.utils.aoa_to_sheet(normRows(comp));
@@ -605,24 +650,45 @@ document.addEventListener('DOMContentLoaded', function(){
       XLSX.utils.book_append_sheet(wb, ws1, "Summary");
       XLSX.utils.book_append_sheet(wb, ws2, "Goal");
       XLSX.utils.book_append_sheet(wb, ws3, "Compare");
-      var wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-      var blob = new Blob([wbout], {type:'application/octet-stream'});
+      var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      var blob = new Blob([wbout], { type: 'application/octet-stream' });
       var link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'SIP-Plan-' + (new Date()).toISOString().slice(0,10) + '.xlsx';
+      link.download = 'SIP-Plan-' + (new Date()).toISOString().slice(0, 10) + '.xlsx';
       document.body.appendChild(link);
       link.click();
-      setTimeout(function(){ URL.revokeObjectURL(link.href); document.body.removeChild(link); }, 3000);
-    } catch(e){ safeLog('downloadErr', e); alert('Could not create Excel. See console.'); }
+      setTimeout(function () { URL.revokeObjectURL(link.href); document.body.removeChild(link); }, 3000);
+    } catch (e) {
+      safeLog('downloadErr', e);
+      alert('Could not create Excel. See console.');
+    }
   });
 
-  // local save/restore (inputs only)
-  function saveLocal(){ try { var save = {inputs:{}, goal:window._goalState && window._goalState.inputs}; ['husband','wife','house','emi','misc','lc','mc','sc','lc_r','mc_r','sc_r','years','target','goalYears','goalCagr','goalInfl'].forEach(function(k){ if($(k)) save.inputs[k] = $(k).value; }); localStorage.setItem('sip_saved', JSON.stringify(save)); } catch(e){} }
-  function restoreLocal(){ try { var raw = localStorage.getItem('sip_saved'); if(!raw) return; var obj = JSON.parse(raw); if(obj && obj.inputs) Object.keys(obj.inputs).forEach(function(k){ if($(k)) $(k).value = obj.inputs[k]; }); renderPlanner(); } catch(e){} }
-  document.querySelectorAll('input,select').forEach(function(el){ el.addEventListener('input', function(){ clearTimeout(window._saveT); window._saveT = setTimeout(saveLocal, 800); }); });
+  // local save/restore
+  function saveLocal() {
+    try {
+      var save = { inputs: {}, goal: window._goalState && window._goalState.inputs };
+      ['husband', 'wife', 'house', 'emi', 'misc', 'lc', 'mc', 'sc', 'lc_r', 'mc_r', 'sc_r', 'years', 'target', 'goalYears', 'goalCagr', 'goalInfl'].forEach(function (k) {
+        if ($(k)) save.inputs[k] = $(k).value;
+      });
+      localStorage.setItem('sip_saved', JSON.stringify(save));
+    } catch (e) { }
+  }
+  function restoreLocal() {
+    try {
+      var raw = localStorage.getItem('sip_saved');
+      if (!raw) return;
+      var obj = JSON.parse(raw);
+      if (obj && obj.inputs) Object.keys(obj.inputs).forEach(function (k) { if ($(k)) $(k).value = obj.inputs[k]; });
+      renderPlanner();
+    } catch (e) { }
+  }
+  document.querySelectorAll('input,select').forEach(function (el) {
+    el.addEventListener('input', function () { clearTimeout(window._saveT); window._saveT = setTimeout(saveLocal, 800); });
+  });
   restoreLocal();
 
-  // initial render
+  // initial actions
   validateAlloc();
   setTimeout(renderPlanner, 150);
 

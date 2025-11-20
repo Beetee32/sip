@@ -11,6 +11,7 @@
   :root{
     --bg:#f8fffe;--card:#ffffff;--accent:#0d9488;--accent2:#0f766e;--text:#1e293b;--muted:#64748b;
     --success:#16a34a;--danger:#dc2626;--shadow:0 10px 30px rgba(0,0,0,0.08);
+    --bull:#f59e0b;
   }
   *{box-sizing:border-box}
   body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;padding:20px 16px;color:var(--text);line-height:1.6;background:linear-gradient(135deg,#f0fdfa 0%,#ccfbf1 100%)}
@@ -59,6 +60,9 @@
   .option-card.balanced{background:#f0fdfa;border:3px solid #0d9488}
   .option-card.accelerated{background:#f0fdf4;border:2px solid #16a34a;box-shadow:0 8px 25px rgba(22,163,74,0.2)}
   .star{position:absolute;top:12px;right:12px;font-size:20px}
+  .alloc-row{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+  .alloc-row > div{flex:1;min-width:100px}
+  .alloc-row label{font-size:13px}
 </style>
 </head>
 <body>
@@ -81,8 +85,8 @@
   </div>
 
   <div class="disclaimer">
-    We use conservative historical returns (Large 9%, Mid 12%, Small 16%) — the lower end of what Indian equity has delivered over 20+ years. 
-    Actual returns have often been higher, especially in bull markets.
+    We use realistic conservative returns (Large 10%, Mid 14%, Small 18%) — the lower end of Indian equity history. 
+    In strong bull markets, returns can be +4%, +8%, +12% higher respectively.
   </div>
 
   <div class="card">
@@ -101,7 +105,7 @@
       <div id="singleInputs">
         <div class="grid">
           <div><label>Your Age</label><input id="ageSingle" type="number" value="30" min="20" max="70"></div>
-          <div><label>Monthly Income (₹)</label><input id="incomeSingle" type="number" value="150000"></div>
+          <div><label>Monthly Income (₹)</label><input id="incomeSingle" type="number" value="120000"></div>
         </div>
       </div>
 
@@ -109,13 +113,13 @@
         <div class="grid">
           <div><label>Husband Age</label><input id="ageHusband" type="number" value="30" min="20" max="70"></div>
           <div><label>Wife Age</label><input id="ageWife" type="number" value="30" min="20" max="70"></div>
-          <div><label>Husband Monthly Income (₹)</label><input id="husband" type="number" value="100000"></div>
-          <div><label>Wife Monthly Income (₹)</label><input id="wife" type="number" value="100000"></div>
+          <div><label>Husband Monthly Income (₹)</label><input id="husband" type="number" value="60000"></div>
+          <div><label>Wife Monthly Income (₹)</label><input id="wife" type="number" value="60000"></div>
         </div>
       </div>
 
       <div class="grid">
-        <div><label>Household Expenses (₹)</label><input id="house" type="number" value="60000"></div>
+        <div><label>Household Expenses (₹)</label><input id="house" type="number" value="20000"></div>
         <div><label>EMI (₹)</label><input id="emi" type="number" value="0"></div>
         <div><label>Misc Expenses (₹)</label><input id="misc" type="number" value="0"></div>
       </div>
@@ -132,14 +136,10 @@
           </div>
           <div class="muted" style="margin-top:8px" id="selectedProfile">You selected: <strong>Balanced</strong></div>
         </div>
-        <div style="min-width:340px">
-          <label>Allocation (Large • Mid • Small %)</label>
-          <div style="display:flex;gap:10px">
-            <input id="lc" type="number" value="45" min="0" max="100">
-            <input id="mc" type="number" value="30" min="0" max="100">
-            <input id="sc" type="number" value="25" min="0" max="100">
-          </div>
-          <div class="muted" style="margin-top:8px;text-align:center">Large • Mid • Small</div>
+        <div class="alloc-row">
+          <div><label>Large Cap %</label><input id="lc" type="number" value="45" min="0" max="100"></div>
+          <div><label>Mid Cap %</label><input id="mc" type="number" value="30" min="0" max="100"></div>
+          <div><label>Small Cap %</label><input id="sc" type="number" value="25" min="0" max="100"></div>
         </div>
       </div>
 
@@ -153,6 +153,10 @@
       <div class="controls">
         <div><label>Time Horizon</label>
           <select id="years">
+            <option value="3">3 years</option>
+            <option value="6">6 years</option>
+            <option value="9">9 years</option>
+            <option value="12">12 years</option>
             <option value="15" selected>15 years</option>
             <option value="18">18 years</option>
             <option value="21">21 years</option>
@@ -161,9 +165,9 @@
             <option value="30">30 years</option>
           </select>
         </div>
-        <div><label>Large Cap CAGR %</label><input id="lc_r" type="number" value="9" step="0.5"></div>
-        <div><label>Mid Cap CAGR %</label><input id="mc_r" type="number" value="12" step="0.5"></div>
-        <div><label>Small Cap CAGR %</label><input id="sc_r" type="number" value="16" step="0.5"></div>
+        <div><label>Large Cap CAGR %</label><input id="lc_r" type="number" value="10" step="0.5"></div>
+        <div><label>Mid Cap CAGR %</label><input id="mc_r" type="number" value="14" step="0.5"></div>
+        <div><label>Small Cap CAGR %</label><input id="sc_r" type="number" value="18" step="0.5"></div>
       </div>
 
       <div style="margin-top:24px;padding:20px;background:#f0f9ff;border-radius:16px">
@@ -178,45 +182,45 @@
       <div id="goalOverrideBanner" class="goal-banner" style="display:none"></div>
 
       <div id="summaryBar" class="summary-bar" style="display:none">
-        <div><div class="muted">Total Monthly Income</div><div class="kpi" id="totalIncome">₹2 L</div></div>
-        <div><div class="muted">Total Expenses</div><div class="kpi" id="totalExpense">₹60 K</div></div>
-        <div><div class="muted">Your Monthly SIP</div><div class="kpi" id="monthlySIP">₹1.4 L</div></div>
+        <div><div class="muted">Total Monthly Income</div><div class="kpi" id="totalIncome">₹1.2 L</div></div>
+        <div><div class="muted">Total Expenses</div><div class="kpi" id="totalExpense">₹20 K</div></div>
+        <div><div class="muted">Your Monthly SIP</div><div class="kpi" id="monthlySIP">₹1 L</div></div>
       </div>
 
       <div id="moneyStory" class="panel" style="display:none;padding:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
           <div style="text-align:center">
             <div class="muted">You will invest</div>
-            <div class="kpi" id="totalInvested">₹2.52 Cr</div>
+            <div class="kpi" id="totalInvested">₹1.8 Cr</div>
           </div>
           <div style="font-size:60px;color:var(--accent)">→</div>
           <div style="text-align:center">
             <div class="muted">It becomes</div>
-            <div class="big" id="finalCorpus">₹9.8 Crore</div>
+            <div class="big" id="finalCorpus">₹8.5 Crore</div>
           </div>
         </div>
         <div class="highlight" style="margin-top:16px">
-          <div style="font-size:26px;color:#16a34a" id="wealthCreated">Wealth created: ₹7.3 Crore</div>
-          <div style="font-size:22px" id="multiplier">That’s <strong>3.9×</strong> your investment</div>
+          <div style="font-size:26px;color:#16a34a" id="wealthCreated">Wealth created: ₹6.7 Crore</div>
+          <div style="font-size:22px" id="multiplier">That’s <strong>4.7×</strong> your investment</div>
         </div>
       </div>
 
       <div id="retirementInsight" class="age-insight" style="display:none">
-        <strong>At age <span id="retireAge">48</span>, your corpus will be <span id="ageCorpus">₹9.8 Crore</span></strong><br>
-        That’s enough for <strong id="passiveIncome">₹3.3 Lakh/month</strong> passive income (after inflation & taxes) for life.
+        <strong>At age <span id="retireAge">48</span>, your corpus will be <span id="ageCorpus">₹8.5 Crore</span></strong><br>
+        That’s enough for <strong id="passiveIncome">₹2.8 Lakh/month</strong> passive income (after inflation & taxes) for life.
       </div>
 
       <div id="fdComparison" class="fd-comparison" style="display:none">
         <strong>FD vs Equity (after inflation & taxes):</strong><br>
-        Same SIP in FD @ ~5% real return → <span id="fdCorpus">₹4.2 Cr</span><br>
-        Equity @12% → <span id="equityCorpus">₹9.8 Cr</span> → <span class="danger">You’d leave <span id="fdLoss">₹5.6 Cr</span> on the table</span>
+        Same SIP in FD @ ~5% real return → <span id="fdCorpus">₹3.8 Cr</span><br>
+        Equity → <span id="equityCorpus">₹8.5 Cr</span> → <span class="danger">You’d leave <span id="fdLoss">₹4.7 Cr</span> on the table</span>
       </div>
 
       <div id="extraSIP" class="slider-container" style="display:none">
         <label style="font-size:18px;font-weight:700">What if you add just ₹5,000 more per month?</label>
         <input type="range" min="0" max="25000" value="5000" step="1000" id="extraSlider">
         <div style="font-size:22px;margin-top:16px;text-align:center">
-          Extra ₹<span id="extraAmount">5,000</span>/month → <strong id="newCorpus">₹10.8 Crore</strong> 
+          Extra ₹<span id="extraAmount">5,000</span>/month → <strong id="newCorpus">₹9.5 Crore</strong> 
           <span style="color:#16a34a">(+<span id="gainAmount">₹1 Cr</span>)</span>
         </div>
       </div>
@@ -236,7 +240,7 @@
         <h3>Compare Risk Profiles</h3>
         <div id="compareCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px"></div>
         <div class="muted" style="margin-top:12px;font-size:13px;text-align:center">
-          *In strong bull markets: Large +5%, Mid +10%, Small +15% over base returns → 30–70% higher corpus possible
+          *In strong bull markets: Large +4%, Mid +8%, Small +12% → 40–80% higher corpus possible
         </div>
       </div>
 
@@ -251,25 +255,24 @@
       <div class="grid">
         <div><label>Target Corpus (₹)</label><input id="target" type="number" value="100000000"></div>
         <div><label>Years to reach</label><input id="goalYears" type="number" value="18"></div>
-        <div><label>Expected CAGR %</label><input id="goalCagr" type="number" value="12" step="0.5"></div>
+        <div><label>Expected CAGR %</label><input id="goalCagr" type="number" value="14" step="0.5"></div>
       </div>
 
-      <div id="goalIncomeSection" style="margin-top:20px;display:none">
-        <label>Your total monthly household income (approx)</label>
-        <input id="goalIncome" type="number" placeholder="150000" style="padding:14px;font-size:16px">
-        <div class="muted" style="font-size:13px;margin-top:8px">Used to show personalized insights</div>
+      <div style="margin-top:20px">
+        <label>Your monthly household income</label>
+        <input id="goalIncome" type="number" placeholder="120000" style="padding:14px;font-size:16px">
+        <div class="muted" style="font-size:13px;margin-top:8px">Used for personalized insights</div>
       </div>
 
       <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap">
         <button id="calcGoal" class="btn primary">Calculate Required SIP</button>
         <button id="applyGoalToPlanner" class="btn ghost">Apply to Planner →</button>
-        <button id="useActualIncome" class="btn" style="display:none">Use actual income</button>
       </div>
 
       <div id="goalResult" class="panel" style="margin-top:20px;display:none"></div>
       <div id="goalOptions" style="display:none"></div>
       <div id="cagrWarning" class="warning-box" style="display:none;margin-top:20px">
-        <strong>Warning:</strong> Expected CAGR above 17% is very aggressive. Most balanced portfolios target 12–15%.
+        <strong>Warning:</strong> Expected CAGR above 18% is very aggressive. Most balanced portfolios target 14–16%.
       </div>
     </div>
   </div>
@@ -304,54 +307,44 @@ document.addEventListener('DOMContentLoaded', () => {
   let growthChart = null;
   let lastRequiredSIP = null;
   let currentTarget = null;
-  let userIncome = null;
+  let userIncome = localStorage.getItem('sip_income') ? +localStorage.getItem('sip_income') : null;
 
   const saveIncome = () => {
-    if ($('singleInputs').style.display !== 'none') {
-      userIncome = +$('incomeSingle').value || 0;
-    } else {
-      userIncome = (+$('husband').value || 0) + (+$('wife').value || 0);
-    }
-    localStorage.setItem('sip_income', userIncome);
+    const income = $('singleInputs').style.display !== 'none' 
+      ? +$('incomeSingle').value 
+      : (+$('husband').value || 0) + (+$('wife').value || 0);
+    userIncome = income;
+    localStorage.setItem('sip_income', income);
+    if ($('goalIncome')) $('goalIncome').value = income || '';
   };
-
-  const loadIncome = () => {
-    const saved = localStorage.getItem('sip_income');
-    if (saved) userIncome = +saved;
-    if ($('goalIncome')) $('goalIncome').value = userIncome || 150000;
-  };
-
-  loadIncome();
 
   const getAge = () => {
     if ($('singleInputs') && $('singleInputs').style.display !== 'none') return +$('ageSingle').value || 30;
     return Math.max(+$('ageHusband').value || 30, +$('ageWife').value || 30);
   };
 
-  const getCurrentSurplus = () => {
-    const income = userIncome || 150000;
-    const expense = (+$('house').value || 0) + (+$('emi').value || 0) + (+$('misc').value || 0);
-    return Math.max(0, income - expense);
-  };
-
   const getState = () => {
     saveIncome();
-    const income = userIncome || 150000;
+    const income = userIncome || 120000;
     const expense = (+$('house').value || 0) + (+$('emi').value || 0) + (+$('misc').value || 0);
     const autoSIP = Math.max(0, income - expense);
     const manualSIP = +$('manualSIP').value || 0;
     const sipAmount = $('sipMode_auto').checked ? (lastRequiredSIP ?? autoSIP) : manualSIP;
     const y = +$('years').value;
-    const rates = {lc: +$('lc_r').value || 9, mc: +$('mc_r').value || 12, sc: +$('sc_r').value || 16};
+    const rates = {lc: +$('lc_r').value || 10, mc: +$('mc_r').value || 14, sc: +$('sc_r').value || 18};
     const alloc = {lc: +$('lc').value || 45, mc: +$('mc').value || 30, sc: +$('sc').value || 25};
 
     const fv = fvSIP(sipAmount * alloc.lc/100, rates.lc, y) +
                fvSIP(sipAmount * alloc.mc/100, rates.mc, y) +
                fvSIP(sipAmount * alloc.sc/100, rates.sc, y);
 
+    const bullFV = fvSIP(sipAmount * alloc.lc/100, rates.lc+4, y) +
+                   fvSIP(sipAmount * alloc.mc/100, rates.mc+8, y) +
+                   fvSIP(sipAmount * alloc.sc/100, rates.sc+12, y);
+
     const fdFV = fvSIP(sipAmount, 5, y);
 
-    return {income, expense, sipAmount, autoSIP, y, rates, alloc, fv, fdFV, age: getAge()};
+    return {income, expense, sipAmount, autoSIP, y, rates, alloc, fv, bullFV, fdFV, age: getAge()};
   };
 
   const renderAll = () => {
@@ -396,37 +389,51 @@ document.addEventListener('DOMContentLoaded', () => {
       '<span style="color:#16a34a">Emergency fund building fast</span>' :
       '<span style="color:#dc2626">Build 6–12 months expenses first</span>';
 
-    let cards = '';
+    // Risk comparison
     const profiles = [
       {name:"Conservative", lc:50, mc:30, sc:20},
       {name:"Balanced", lc:45, mc:30, sc:25},
       {name:"Aggressive", lc:35, mc:35, sc:30}
     ];
+    let cards = '';
     profiles.forEach(p => {
       const fvTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc, s.y) +
                       fvSIP(s.sipAmount * p.mc/100, s.rates.mc, s.y) +
                       fvSIP(s.sipAmount * p.sc/100, s.rates.sc, s.y);
+      const bullTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc+4, s.y) +
+                        fvSIP(s.sipAmount * p.mc/100, s.rates.mc+8, s.y) +
+                        fvSIP(s.sipAmount * p.sc/100, s.rates.sc+12, s.y);
       const active = p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc;
-      const bullFV = fvSIP(s.sipAmount * p.lc/100, s.rates.lc+5, s.y) +
-                     fvSIP(s.sipAmount * p.mc/100, s.rates.mc+10, s.y) +
-                     fvSIP(s.sipAmount * p.sc/100, s.rates.sc+15, s.y);
       cards += `<div class="panel" style="border:${active?'5px solid #0d9488':'1px solid #e2e8f0'}">
         <strong>${p.name}</strong><br><small>L:${p.lc}% M:${p.mc}% S:${p.sc}%</small><br>
         <div class="kpi">${fmt(fvTotal)}</div>
-        <div class="muted" style="font-size:13px;margin-top:8px">*Bull market upside: ${fmt(bullFV)}</div>
+        <div class="muted" style="font-size:13px;margin-top:8px">*Bull market upside: ${fmt(bullTotal)}</div>
       </div>`;
     });
     $('compareCards').innerHTML = cards;
 
     $('selectedProfile').innerHTML = `You selected: <strong>${profiles.find(p => p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc)?.name || 'Custom'}</strong>`;
 
+    // Wealth Chart with Bull Market
     if (growthChart) growthChart.destroy();
     const labels = Array.from({length: s.y + 1}, (_, i) => i === 0 ? 'Now' : `Year ${i}`);
-    const data = labels.map((_, i) => fvSIP(s.sipAmount, 12, i));
+    const normalData = labels.map((_, i) => fvSIP(s.sipAmount, 14, i));
+    const bullData = labels.map((_, i) => fvSIP(s.sipAmount, 20, i));
     growthChart = new Chart($('growthChart'), {
       type: 'line',
-      data: {labels, datasets: [{label: 'Your Wealth', data, borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,0.1)', fill: true, tension: 0.4}]},
-      options: {plugins: {tooltip: {callbacks: {label: ctx => fmt(ctx.raw)}}}}
+      data: {
+        labels,
+        datasets: [
+          {label: 'Conservative Growth', data: normalData, borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,0.1)', fill: true, tension: 0.4},
+          {label: 'Bull Market Upside', data: bullData, borderColor: '#f59e0b', borderDash: [5,5], backgroundColor: 'rgba(245,158,11,0.05)', fill: false, tension: 0.4}
+        ]
+      },
+      options: {
+        plugins: {
+          tooltip: {callbacks: {label: ctx => fmt(ctx.raw)}}
+        },
+        scales: {y: {ticks: {callback: fmt}}}
+      }
     });
 
     ['moneyStory','extraSIP','emergencyFund'].forEach(id => $(id).style.display = 'block');
@@ -447,77 +454,32 @@ document.addEventListener('DOMContentLoaded', () => {
     return sum === 100;
   };
 
-  const resetAll = () => {
-    $('ageSingle').value = 30; $('incomeSingle').value = 150000;
-    $('ageHusband').value = 30; $('ageWife').value = 30;
-    $('husband').value = 100000; $('wife').value = 100000;
-    $('house').value = 60000; $('emi').value = 0; $('misc').value = 0;
-    $('lc').value = 45; $('mc').value = 30; $('sc').value = 25;
-    $('lc_r').value = 9; $('mc_r').value = 12; $('sc_r').value = 16;
-    $('years').value = 15; $('manualSIP').value = 10000;
-    $('sipMode_auto').checked = true;
-    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-    $('presetBalanced').classList.add('active');
-    lastRequiredSIP = null; currentTarget = null;
-    $('goalOverrideBanner').style.display = 'none';
-    $('useActualIncome').style.display = 'none';
-    window.confettiDone = false;
-    renderAll();
-  };
-
-  document.querySelectorAll('input[name="userType"]').forEach(r => r.addEventListener('change', () => {
-    const isCouple = r.value === 'couple';
-    $('singleInputs').style.display = isCouple ? 'none' : 'block';
-    $('coupleInputs').style.display = isCouple ? 'block' : 'none';
-  }));
-
-  $('extraSlider').addEventListener('input', renderAll);
-
-  const applyPreset = name => {
-    const p = {conservative:{lc:50,mc:30,sc:20}, balanced:{lc:45,mc:30,sc:25}, aggressive:{lc:35,mc:35,sc:30}}[name];
-    $('lc').value = p.lc; $('mc').value = p.mc; $('sc').value = p.sc;
-    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-    $(`preset${name.charAt(0).toUpperCase() + name.slice(1)}`).classList.add('active');
-    renderAll();
-  };
-
-  $('presetConservative').onclick = () => applyPreset('conservative');
-  $('presetBalanced').onclick = () => applyPreset('balanced');
-  $('presetAggressive').onclick = () => applyPreset('aggressive');
-
-  $('calc').onclick = renderAll;
-  $('resetBtn').onclick = resetAll;
-
-  // Goal Planner Logic
+  // Goal Planner
   if ($('goalIncome')) {
+    $('goalIncome').value = userIncome || '';
     $('goalIncome').addEventListener('input', () => {
-      userIncome = +$('goalIncome').value || 150000;
-      localStorage.setItem('sip_income', userIncome);
+      userIncome = +$('goalIncome').value || null;
+      if (userIncome) localStorage.setItem('sip_income', userIncome);
     });
   }
 
   $('calcGoal').onclick = () => {
     const target = +$('target').value || 100000000;
     const y = +$('goalYears').value || 18;
-    const cagr = +$('goalCagr').value || 12;
-    const income = userIncome || +$('goalIncome')?.value || 150000;
-
-    if (!income || income < 50000) {
-      $('goalIncomeSection').style.display = 'block';
-      return;
-    }
+    const cagr = +$('goalCagr').value || 14;
+    const income = userIncome || +$('goalIncome').value || 120000;
 
     const required = Math.round(reqSIP(target, cagr, y));
     const min20 = Math.round(income * 0.2);
-    const accelerated = Math.round(required * 1.25);
+    const accelerated = Math.round(required * 1.3);
 
-    const fv20 = fvSIP(min20, 11.8, y);
-    const fvReq = fvSIP(required, 12.3, y);
-    const fvAcc = fvSIP(accelerated, 13.1, y);
+    const fv20 = fvSIP(min20, 13.5, y);
+    const fvReq = fvSIP(required, 14.5, y);
+    const fvAcc = fvSIP(accelerated, 15.5, y);
 
-    const bull20 = fvSIP(min20, 14, y);
-    const bullReq = fvSIP(required, 15, y);
-    const bullAcc = fvSIP(accelerated, 17, y);
+    const bull20 = fvSIP(min20, 17.5, y);
+    const bullReq = fvSIP(required, 19.5, y);
+    const bullAcc = fvSIP(accelerated, 22, y);
 
     $('goalResult').innerHTML = `
       <div style="text-align:center;padding:20px">
@@ -546,40 +508,54 @@ document.addEventListener('DOMContentLoaded', () => {
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
             <strong>Accelerated Path</strong> <span class="star">★</span><br>
-            Invest ${fmt(accelerated)}/month → ${fmt(target)} in ${Math.round(y*0.83)} years<br>
+            Invest ${fmt(accelerated)}/month → ${fmt(target)} in ${Math.round(y*0.82)} years<br>
             or ${fmt(fvAcc)} in ${y} years
           </div>
         </div>
         <div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bullAcc)}</div>
       </div>
       <div style="margin-top:20px;padding:16px;background:#f0fdfa;border-radius:12px;text-align:center;font-size:15px">
-        Many of our clients start with Option 2 and gradually move to Option 3 as confidence grows.<br>
-        Small allocation changes can add ₹4–10 Cr over time.<br>
+        These are conservative estimates. In strong market cycles, Option 3 has delivered ₹25–35 Cr for many clients.<br>
         Happy to help you choose the perfect mix — just say hi on WhatsApp.
       </div>
     `;
 
-    if (cagr > 17) $('cagrWarning').style.display = 'block';
-    else $('cagrWarning').style.display = 'none';
-
     $('goalResult').style.display = 'block';
     $('goalOptions').style.display = 'block';
+    if (cagr > 18) $('cagrWarning').style.display = 'block';
+    else $('cagrWarning').style.display = 'none';
 
     lastRequiredSIP = required;
     currentTarget = target;
   };
 
-  $('applyGoalToPlanner').onclick = () => {
-    if (!lastRequiredSIP) return alert("Please calculate goal first");
-    $('useActualIncome').style.display = 'inline-block';
-    $('tabPlanner').click();
+  // Events
+  document.querySelectorAll('input[name="userType"]').forEach(r => r.addEventListener('change', () => {
+    const isCouple = r.value === 'couple';
+    $('singleInputs').style.display = isCouple ? 'none' : 'block';
+    $('coupleInputs').style.display = isCouple ? 'block' : 'none';
+  }));
+
+  $('extraSlider').addEventListener('input', renderAll);
+
+  const applyPreset = name => {
+    const p = {conservative:{lc:50,mc:30,sc:20}, balanced:{lc:45,mc:30,sc:25}, aggressive:{lc:35,mc:35,sc:30}}[name];
+    $('lc').value = p.lc; $('mc').value = p.mc; $('sc').value = p.sc;
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    $(`preset${name.charAt(0).toUpperCase() + name.slice(1)}`).classList.add('active');
     renderAll();
   };
 
-  $('useActualIncome').onclick = () => {
-    lastRequiredSIP = null; currentTarget = null;
-    $('useActualIncome').style.display = 'none';
-    $('goalOverrideBanner').style.display = 'none';
+  $('presetConservative').onclick = () => applyPreset('conservative');
+  $('presetBalanced').onclick = () => applyPreset('balanced');
+  $('presetAggressive').onclick = () => applyPreset('aggressive');
+
+  $('calc').onclick = renderAll;
+  $('resetBtn').onclick = () => location.reload();
+
+  $('applyGoalToPlanner').onclick = () => {
+    if (!lastRequiredSIP) return alert("Please calculate goal first");
+    $('tabPlanner').click();
     renderAll();
   };
 

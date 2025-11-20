@@ -57,9 +57,10 @@
   input[type=range]::-webkit-slider-thumb{background:var(--accent);width:28px;height:28px;border-radius:50%;cursor:pointer}
   .existing-hint{background:#e0f2fe;padding:20px;border-radius:16px;margin:24px 0;border-left:6px solid #0d9488}
   .chart-panel{background:#fff;border-radius:16px;padding:24px;box-shadow:var(--shadow);margin-top:24px}
-  .age-insight{background:#f0fdf4;padding:20px;border-radius:16px;margin:20px 0;border:1px solid #86efac}
+  .age-insight{background:#f0fdf4;padding:24px;border-radius:16px;margin:20px 0;border:1px solid #86efac;font-size:18px}
   .risk-note{background:#fefce8;padding:20px;border-radius:16px;margin:20px 0;border-left:6px solid #f59e0b}
   .warning-box{background:#fef2f2;border:1px solid #fca5a5;padding:16px;border-radius:12px;color:#991b1b}
+  .fd-comparison{background:#fef2f2;padding:20px;border-radius:16px;margin:20px 0;border-left:6px solid #dc2626}
 </style>
 </head>
 <body>
@@ -74,9 +75,9 @@
       <h1>Simple SIP Planner</h1>
       <div class="sub">Your path to financial freedom starts here</div>
     </div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
       <button id="downloadBtn" class="btn primary">Download Your Plan (Excel)</button>
-      <button id="copyWA" class="btn ghost">Copy WhatsApp Message</button>
+      <div class="muted" style="font-size:14px">Share your plan with family or advisor</div>
       <button id="resetBtn" class="btn ghost">Reset</button>
     </div>
   </div>
@@ -203,10 +204,17 @@
         </div>
       </div>
 
-      <!-- Age Insight -->
-      <div id="ageInsight" class="age-insight" style="display:none">
+      <!-- Combined Retirement Insight -->
+      <div id="retirementInsight" class="age-insight" style="display:none">
         <strong>At age <span id="retireAge">48</span>, your corpus will be <span id="ageCorpus">₹9.8 Crore</span></strong><br>
-        That’s enough for <strong id="passiveIncome">₹3.3 Lakh/month</strong> passive income for life.
+        That’s enough for <strong id="passiveIncome">₹3.3 Lakh/month</strong> passive income (after inflation & taxes) for life.
+      </div>
+
+      <!-- Dynamic FD vs Equity -->
+      <div id="fdComparison" class="fd-comparison" style="display:none">
+        <strong>FD vs Equity (after inflation & taxes):</strong><br>
+        Same SIP in FD @ ~5% real return → <span id="fdCorpus">₹4.2 Cr</span><br>
+        Equity @12% → <span id="equityCorpus">₹9.8 Cr</span> → <span class="danger">You’d leave <span id="fdLoss">₹5.6 Cr</span> on the table</span>
       </div>
 
       <!-- Extra SIP Slider -->
@@ -219,21 +227,10 @@
         </div>
       </div>
 
-      <!-- SWP + FD + Emergency -->
-      <div id="swpPanel" class="panel" style="display:none">
-        <h3>Your Retirement Income</h3>
-        <div style="font-size:22px">Your corpus can safely give you <strong id="monthlySWP">₹3.3 Lakh/month</strong> for 30+ years</div>
-      </div>
-
-      <div id="fdVsEquity" class="highlight" style="display:none">
-        <strong>FD vs Equity Reality:</strong><br>
-        Same investment in FD @7% ≈ ₹4.2 Cr → <span class="danger">You lose ₹5.6 Cr by playing safe</span>
-      </div>
-
       <div class="existing-hint">
         <strong>Already investing?</strong><br>
-        You might be leaving <strong>serious money</strong> on the table.<br>
-        <em>Reply on WhatsApp — I’ll review your portfolio free & show exact gains possible.</em>
+        You might be leaving serious money on the table.<br>
+        <em>Reply on WhatsApp — I’ll review your portfolio free and see if we can help you get better returns.</em>
       </div>
 
       <div id="emergencyFund" class="panel" style="display:none">
@@ -273,27 +270,16 @@
           <div class="grid">
             <div class="highlight"><strong>Required SIP</strong><br><span style="font-size:28px" id="goalSIP">₹48,000/month</span></div>
             <div class="highlight" style="background:#fef3c7"><strong>Delay Cost</strong><br>Every year delay → <span class="danger">+₹18,000/month extra needed</span></div>
-            <div class="highlight" style="background:#ecfdf5"><strong>Step-up Power</strong><br>10% annual SIP increase → Required SIP drops to <strong id="stepupSIP">₹28,000 only</strong></div>
+            <div class="highlight" style="background:#ecfdf5"><strong>Step-up Power</strong><br>10% annual increase → Required SIP drops to <strong id="stepupSIP">₹28,000 only</strong></div>
           </div>
           <div style="margin-top:16px;font-size:15px;color:#475569">
-            Small tweaks like starting early or stepping up can help you reach your goal <strong>years ahead</strong> of schedule.
+            Small tweaks like starting early or increasing SIP yearly can help you reach your goal <strong>years ahead</strong> of schedule.
           </div>
         </div>
         <div id="cagrWarning" class="warning-box" style="display:none">
           <strong>Warning:</strong> Expected CAGR above 17% is very aggressive. It requires frequent rebalancing and carries substantial risk. Most balanced portfolios target 12–15%.
         </div>
       </div>
-    </div>
-
-    <div class="panel" style="margin-top:32px;text-align:center">
-      <h3>Golden Rules of Wealth Creation</h3>
-      <ul style="display:inline-block;text-align:left;max-width:600px;margin:20px auto;color:#475569">
-        <li>Start today — every year delay costs crores</li>
-        <li>Equity rewards patience, not timing</li>
-        <li>Never break your SIP — volatility is your friend</li>
-        <li>Rebalance once a year, ignore daily noise</li>
-        <li>A written plan beats willpower every time</li>
-      </ul>
     </div>
   </div>
 </div>
@@ -332,6 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let growthChart = null;
   let lastRequiredSIP = null;
+  let currentTarget = null;
 
   const validateAlloc = () => {
     const sum = (+$('lc').value || 0) + (+$('mc').value || 0) + (+$('sc').value || 0);
@@ -339,14 +326,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const getAge = () => {
-    if ($('singleInputs').style.display !== 'none') return +$('ageSingle').value || 30;
+    if ($('singleInputs') && $('singleInputs').style.display !== 'none') return +$('ageSingle').value || 30;
     const h = +$('ageHusband').value || 30;
     const w = +$('ageWife').value || 30;
     return Math.max(h, w);
   };
 
   const getIncome = () => {
-    if ($('singleInputs').style.display !== 'none') return +$('incomeSingle').value || 0;
+    if ($('singleInputs') && $('singleInputs').style.display !== 'none') return +$('incomeSingle').value || 0;
     return (+$('husband').value || 0) + (+$('wife').value || 0);
   };
 
@@ -364,7 +351,9 @@ document.addEventListener('DOMContentLoaded', () => {
                fvSIP(sipAmount * alloc.mc/100, rates.mc, y) +
                fvSIP(sipAmount * alloc.sc/100, rates.sc, y);
 
-    return {income, expense, sipAmount, autoSIP, y, rates, alloc, fv, age: getAge()};
+    const fdFV = fvSIP(sipAmount, 5, y); // ~5% real return after inflation & tax
+
+    return {income, expense, sipAmount, autoSIP, y, rates, alloc, fv, fdFV, age: getAge()};
   };
 
   const renderAll = () => {
@@ -384,12 +373,20 @@ document.addEventListener('DOMContentLoaded', () => {
     $('wealthCreated').textContent = fmt(wealth);
     $('multiplier').innerHTML = `That’s <strong>${multiplier}×</strong> your investment`;
 
+    // Retirement Insight
     const retireAge = s.age + s.y;
     $('retireAge').textContent = retireAge;
     $('ageCorpus').textContent = fmt(s.fv);
     $('passiveIncome').textContent = fmt(s.fv * 0.04 / 12);
-    $('ageInsight').style.display = 'block';
+    $('retirementInsight').style.display = 'block';
 
+    // FD Comparison
+    $('fdCorpus').textContent = fmt(s.fdFV);
+    $('equityCorpus').textContent = fmt(s.fv);
+    $('fdLoss').textContent = fmt(s.fv - s.fdFV);
+    $('fdComparison').style.display = 'block';
+
+    // Extra slider
     const extra = +$('extraSlider').value;
     const newSIP = s.sipAmount + extra;
     const newFV = fvSIP(newSIP * s.alloc.lc/100, s.rates.lc, s.y) +
@@ -399,31 +396,27 @@ document.addEventListener('DOMContentLoaded', () => {
     $('newCorpus').textContent = fmt(newFV);
     $('gainAmount').textContent = fmt(newFV - s.fv);
 
-    $('monthlySWP').textContent = fmt(s.fv * 0.04 / 12);
-
+    // Emergency
     const needed = s.expense * 9;
     $('emergencyStatus').innerHTML = s.sipAmount * 12 * 3 >= needed ?
       '<span style="color:#16a34a">Emergency fund building fast</span>' :
       '<span style="color:#dc2626">Build 6–12 months expenses first</span>';
 
-    // Compare cards with active highlight
+    // Compare cards
     let cards = '';
     Object.entries(presets).forEach(([key, p]) => {
       const fvTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc, s.y) +
                       fvSIP(s.sipAmount * p.mc/100, s.rates.mc, s.y) +
                       fvSIP(s.sipAmount * p.sc/100, s.rates.sc, s.y);
       const active = p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc;
-      cards += `<div class="panel" style="border:${active?'5px solid #0d9488':'1px solid #e2e8f0'};transform:${active?'scale(1.05)':''};box-shadow:${active?'0 10px 30px rgba(13,148,136,0.3)':''}">
+      cards += `<div class="panel" style="border:${active?'5px solid #0d9488':'1px solid #e2e8f0'};transform:${active?'scale(1.05)':''}">
         <strong>${p.name}</strong><br><small>L:${p.lc}% M:${p.mc}% S:${p.sc}%</small><br>
         <div class="kpi">${fmt(fvTotal)}</div>
       </div>`;
     });
     $('compareCards').innerHTML = cards;
 
-    // Update selected profile text
-    const activeProfile = Object.entries(presets).find(([k,p]) => 
-      p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc);
-    $('selectedProfile').innerHTML = `You selected: <strong>${activeProfile ? activeProfile[1].name : 'Custom'}</strong>`;
+    $('selectedProfile').innerHTML = `You selected: <strong>${Object.values(presets).find(p => p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc)?.name || 'Custom'}</strong>`;
 
     if (growthChart) growthChart.destroy();
     const labels = Array.from({length: s.y + 1}, (_, i) => i === 0 ? 'Now' : `Year ${i}`);
@@ -434,11 +427,16 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {plugins: {tooltip: {callbacks: {label: ctx => fmt(ctx.raw)}}}}
     });
 
-    ['moneyStory','extraSIP','swpPanel','fdVsEquity','emergencyFund'].forEach(id => $(id).style.display = 'block');
+    ['moneyStory','extraSIP','emergencyFund'].forEach(id => $(id).style.display = 'block');
 
     if (s.fv > 5e7 && !window.confettiDone) {
       confetti({particleCount: 100, spread: 70, origin: { y: 0.6 }});
       window.confettiDone = true;
+    }
+
+    if (lastRequiredSIP && currentTarget) {
+      $('goalOverrideBanner').style.display = 'block';
+      $('goalOverrideBanner').innerHTML = `Goal Mode Active: Using ${fmt(lastRequiredSIP)}/month to reach ${fmt(currentTarget)}`;
     }
   };
 
@@ -453,7 +451,9 @@ document.addEventListener('DOMContentLoaded', () => {
     $('sipMode_auto').checked = true;
     document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
     $('presetBalanced').classList.add('active');
-    lastRequiredSIP = null;
+    lastRequiredSIP = null; currentTarget = null;
+    $('goalOverrideBanner').style.display = 'none';
+    $('useActualIncome').style.display = 'none';
     window.confettiDone = false;
     renderAll();
   };
@@ -482,11 +482,11 @@ document.addEventListener('DOMContentLoaded', () => {
   $('calc').onclick = renderAll;
 
   $('calcGoal').onclick = () => {
-    const target = +$('target').value;
-    const y = +$('goalYears').value;
+    const target = +$('target').value || 0;
+    const y = +$('goalYears').value || 15;
     const cagr = +$('goalCagr').value || 12;
     const required = Math.round(reqSIP(target, cagr, y));
-    const stepupSIP = Math.round(reqSIP(target, cagr + 3, y) * 0.6); // approx 10% step-up effect
+    const stepupSIP = Math.round(reqSIP(target, cagr + 3, y) * 0.6);
 
     $('goalSIP').textContent = fmt(required);
     $('stepupSIP').textContent = fmt(stepupSIP);
@@ -500,24 +500,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     lastRequiredSIP = required;
+    currentTarget = target;
   };
 
   $('applyGoalToPlanner').onclick = () => {
-    if (!lastRequiredSIP) return alert("Calculate goal first");
+    if (!lastRequiredSIP) return alert("Please calculate goal first");
     $('useActualIncome').style.display = 'inline-block';
-    $('goalOverrideBanner').style.display = 'block';
-    $('goalOverrideBanner').innerHTML = `Goal Mode Active: Using ${fmt(lastRequiredSIP)}/month to reach ₹${fmt(+$(target).value)}`;
     $('tabPlanner').click();
     renderAll();
   };
 
-  $('useActualIncome').onclick = () => { lastRequiredSIP = null; $('useActualIncome').style.display = 'none'; $('goalOverrideBanner').style.display = 'none'; renderAll(); };
-
-  $('copyWA').onclick = () => {
-    const s = getState();
-    const text = `Hi! I used your SIP Planner.\nI can invest ₹${s.sipAmount.toLocaleString('en-IN')}/month for ${s.y} years.\nExpected corpus: ${fmt(s.fv)}\nPlease help me start.`;
-    navigator.clipboard.writeText(text);
-    alert("Message copied! Paste in WhatsApp");
+  $('useActualIncome').onclick = () => {
+    lastRequiredSIP = null;
+    currentTarget = null;
+    $('useActualIncome').style.display = 'none';
+    $('goalOverrideBanner').style.display = 'none';
+    renderAll();
   };
 
   $('tabPlanner').onclick = () => { $('panePlanner').style.display = ''; $('paneGoal').style.display = 'none'; $('tabPlanner').className = 'btn primary'; $('tabGoal').className = 'btn ghost'; };

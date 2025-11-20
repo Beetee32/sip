@@ -44,12 +44,8 @@
   .tips{margin-top:14px;padding:12px;border-radius:10px;background:linear-gradient(90deg,#fff 0,#fbfdff 100%);border:1px solid #eef3fb}
   .flex{display:flex;gap:8px;align-items:center}
   .info{display:inline-block;margin-left:6px;color:var(--muted);font-weight:700}
-  .tooltip{
-    position:relative; display:inline-block;
-  }
-  .tooltip .tt{
-    visibility:hidden; width:220px; background:#111; color:#fff; text-align:left; border-radius:6px; padding:8px; position:absolute; z-index:10; bottom:125%; left:50%; transform:translateX(-50%); font-size:12px; line-height:1.3;
-  }
+  .tooltip{position:relative; display:inline-block}
+  .tooltip .tt{visibility:hidden; width:220px; background:#111; color:#fff; text-align:left; border-radius:6px; padding:8px; position:absolute; z-index:10; bottom:125%; left:50%; transform:translateX(-50%); font-size:12px; line-height:1.3}
   .tooltip:hover .tt{visibility:visible}
   .whatsapp{position:fixed; right:18px; bottom:18px; background:#25D366; color:white; padding:12px 14px; border-radius:999px; display:flex; gap:10px; align-items:center; box-shadow:0 8px 20px rgba(0,0,0,0.12); text-decoration:none; font-weight:700; z-index:9999}
   .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
@@ -60,7 +56,11 @@
 <body>
 
   <a class="whatsapp" id="waBtn" href="https://wa.me/917666123827" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M20.5 3.5L3.5 20.5V24l3.5-1.1L24 7.5L20.5 3.5Z" fill="white" opacity=".08"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.099-.47-.149-.669.15-.198.297-.767.967-.94 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.06-.173-.298-.018-.459.13-.608.134-.133.298-.347.447-.52.149-.174.198-.298.297-.497.099-.198 0-.372-.05-.521-.05-.149-.669-1.612-.915-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.02-1.04 2.479 0 1.459 1.065 2.872 1.213 3.071.149.198 2.095 3.2 5.077 4.487 2.982 1.288 2.982.858 3.517.806.536-.052 1.758-.718 2.006-1.409.248-.692.248-1.285.173-1.409-.074-.124-.272-.198-.569-.347z" fill="white"/></svg>
+    <!-- simplified SVG to avoid copy issues -->
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M20.5 3.5L3.5 20.5V24l3.5-1.1L24 7.5L20.5 3.5Z" fill="white" opacity=".08"/>
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.099-.47-.149-.669.15-.198.297-.767.967-.94 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.06-.173-.298-.018-.459.13-.608.134-.133.298-.347.447-.52.149-.174.198-.298.297-.497.099-.198 0-.372-.05-.521-.05-.149-.669-1.612-.915-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.02-1.04 2.479 0 1.459 1.065 2.872 1.213 3.071.149.198 2.095 3.2 5.077 4.487 2.982 1.288 2.982.858 3.517.806.536-.052 1.758-.718 2.006-1.409.248-.692.248-1.285.173-1.409-.074-.124-.272-.198-.569-.347z" fill="white"/>
+    </svg>
     Any doubts? Chat on WhatsApp
   </a>
 
@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function(){
   'use strict';
 
   // Defensive wrapper for console logging
-  function safeLog(){ if(window.console) console.log.apply(console, arguments); }
+  function safeLog(){ if(window.console && window.console.log) console.log.apply(console, arguments); }
 
   try {
     /* ---------- helpers ---------- */
@@ -307,26 +307,26 @@ document.addEventListener('DOMContentLoaded', function(){
 
     /* ---------- planner calculations & charts ---------- */
     function getPlannerInputState(){
-      var husband = Number($id('husband')?.value||0);
-      var wife = Number($id('wife')?.value||0);
-      var house = Number($id('house')?.value||0);
-      var emi = Number($id('emi')?.value||0);
-      var misc = Number($id('misc')?.value||0);
+      var husband = Number($id('husband') && $id('husband').value || 0);
+      var wife = Number($id('wife') && $id('wife').value || 0);
+      var house = Number($id('house') && $id('house').value || 0);
+      var emi = Number($id('emi') && $id('emi').value || 0);
+      var misc = Number($id('misc') && $id('misc').value || 0);
       var totalIncome = husband + wife;
       var totalExpenses = house + emi + misc;
       var investable = Math.max(0, totalIncome - totalExpenses);
 
-      var lc = Number($id('lc')?.value||0);
-      var mc = Number($id('mc')?.value||0);
-      var sc = Number($id('sc')?.value||0);
-      var gold = Number($id('gold')?.value||0);
+      var lc = Number($id('lc') && $id('lc').value || 0);
+      var mc = Number($id('mc') && $id('mc').value || 0);
+      var sc = Number($id('sc') && $id('sc').value || 0);
+      var gold = Number($id('gold') && $id('gold').value || 0);
       var allocTotal = lc + mc + sc + gold;
 
-      var years = Number($id('years')?.value||10);
-      var lc_r = Number($id('lc_r')?.value||0);
-      var mc_r = Number($id('mc_r')?.value||0);
-      var sc_r = Number($id('sc_r')?.value||0);
-      var gold_r = Number($id('gold_r')?.value||0);
+      var years = Number($id('years') && $id('years').value || 10);
+      var lc_r = Number($id('lc_r') && $id('lc_r').value || 0);
+      var mc_r = Number($id('mc_r') && $id('mc_r').value || 0);
+      var sc_r = Number($id('sc_r') && $id('sc_r').value || 0);
+      var gold_r = Number($id('gold_r') && $id('gold_r').value || 0);
 
       var lc_sip = investable * (lc/100);
       var mc_sip = investable * (mc/100);
@@ -501,10 +501,10 @@ document.addEventListener('DOMContentLoaded', function(){
     /* ---------- goal planner ---------- */
     on('calcGoal','click', function(){
       try {
-        var FV = Number($id('target')?.value||0);
-        var years = Number($id('goalYears')?.value||0);
-        var cagr = Number($id('goalCagr')?.value||0);
-        var infl = Number($id('goalInfl')?.value||0);
+        var FV = Number($id('target') && $id('target').value || 0);
+        var years = Number($id('goalYears') && $id('goalYears').value || 0);
+        var cagr = Number($id('goalCagr') && $id('goalCagr').value || 0);
+        var infl = Number($id('goalInfl') && $id('goalInfl').value || 0);
 
         var sip = required_sip_for_target(FV, cagr, years); // monthly
         var months = years * 12;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Simple SIP Planner — Interactive</title>
+<title>Simple SIP Planner — Interactive (fixed)</title>
 
 <!-- SheetJS for Excel export -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -51,12 +51,14 @@
     visibility:hidden; width:220px; background:#111; color:#fff; text-align:left; border-radius:6px; padding:8px; position:absolute; z-index:10; bottom:125%; left:50%; transform:translateX(-50%); font-size:12px; line-height:1.3;
   }
   .tooltip:hover .tt{visibility:visible}
-  .whatsapp{position:fixed; right:18px; bottom:18px; background:#25D366; color:white; padding:12px 14px; border-radius:999px; display:flex; gap:10px; align-items:center; box-shadow:0 8px 20px rgba(0,0,0,0.12); text-decoration:none; font-weight:700}
+  .whatsapp{position:fixed; right:18px; bottom:18px; background:#25D366; color:white; padding:12px 14px; border-radius:999px; display:flex; gap:10px; align-items:center; box-shadow:0 8px 20px rgba(0,0,0,0.12); text-decoration:none; font-weight:700; z-index:9999}
   .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+  .error-banner{background:#fff2f2;color:#a00;padding:10px;border-radius:8px;margin-top:10px;border:1px solid #ffd6d6}
   @media (max-width:600px){ .header{flex-direction:column;align-items:flex-start;gap:6px} .controls{flex-direction:column;align-items:stretch} .charts{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
+
   <a class="whatsapp" id="waBtn" href="https://wa.me/917666123827" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M20.5 3.5L3.5 20.5V24l3.5-1.1L24 7.5L20.5 3.5Z" fill="white" opacity=".08"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.099-.47-.149-.669.15-.198.297-.767.967-.94 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.06-.173-.298-.018-.459.13-.608.134-.133.298-.347.447-.52.149-.174.198-.298.297-.497.099-.198 0-.372-.05-.521-.05-.149-.669-1.612-.915-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.02-1.04 2.479 0 1.459 1.065 2.872 1.213 3.071.149.198 2.095 3.2 5.077 4.487 2.982 1.288 2.982.858 3.517.806.536-.052 1.758-.718 2.006-1.409.248-.692.248-1.285.173-1.409-.074-.124-.272-.198-.569-.347z" fill="white"/></svg>
     Any doubts? Chat on WhatsApp
@@ -126,7 +128,7 @@
             </div>
             <div class="segmented" role="tablist" aria-label="Allocation presets">
               <button id="presetCons" class="seg-btn">Conservative</button>
-              <button id="presetBal" class="seg-btn active">Balanced</button>
+              <button id="presetBal" class="seg-btn">Balanced</button>
               <button id="presetAgg" class="seg-btn">Aggressive</button>
             </div>
           </div>
@@ -215,466 +217,480 @@
   </div>
 
 <script>
-(function(){
+document.addEventListener('DOMContentLoaded', function(){
   'use strict';
 
-  /* ---------- helpers ---------- */
-  function indianFormat(x){
-    if(x === null || x === undefined || isNaN(x)) return "-";
-    x = Math.round(Number(x) || 0);
-    if(x >= 10000000) return (x/10000000).toFixed(2) + " Cr";
-    if(x >= 100000) return (x/100000).toFixed(2) + " L";
-    return x.toLocaleString('en-IN');
-  }
+  // Defensive wrapper for console logging
+  function safeLog(){ if(window.console) console.log.apply(console, arguments); }
 
-  function fv_sip(monthly, annualRate, years){
-    monthly = Number(monthly) || 0;
-    annualRate = Number(annualRate) || 0;
-    years = Number(years) || 0;
-    if(monthly <= 0) return 0;
-    var r = annualRate/100/12;
-    var n = years*12;
-    if(Math.abs(r) < 1e-12) return monthly * n;
-    return monthly * ( (Math.pow(1+r, n) - 1) / r ) * (1 + r);
-  }
-
-  function required_sip_for_target(FV, annualCagr, years){
-    FV = Number(FV) || 0;
-    var r = (Number(annualCagr) || 0)/100/12;
-    var n = Number(years) * 12;
-    if(n <= 0) return NaN;
-    if(Math.abs(r) < 1e-12){
-      return FV / n;
+  try {
+    /* ---------- helpers ---------- */
+    function indianFormat(x){
+      if(x === null || x === undefined || isNaN(x)) return "-";
+      x = Math.round(Number(x) || 0);
+      if(x >= 10000000) return (x/10000000).toFixed(2) + " Cr";
+      if(x >= 100000) return (x/100000).toFixed(2) + " L";
+      return x.toLocaleString('en-IN');
     }
-    return FV * r / ( (Math.pow(1+r, n) - 1) * (1 + r) );
-  }
 
-  /* ---------- tab logic ---------- */
-  var tabPlanner = document.getElementById('tabPlanner');
-  var tabGoal = document.getElementById('tabGoal');
-  var panePlanner = document.getElementById('panePlanner');
-  var paneGoal = document.getElementById('paneGoal');
-
-  function activateTab(tabName){
-    if(tabName === 'planner'){
-      tabPlanner.classList.add('active'); tabPlanner.setAttribute('aria-selected','true');
-      tabGoal.classList.remove('active'); tabGoal.setAttribute('aria-selected','false');
-      panePlanner.style.display = ''; paneGoal.style.display = 'none';
-    } else {
-      tabGoal.classList.add('active'); tabGoal.setAttribute('aria-selected','true');
-      tabPlanner.classList.remove('active'); tabPlanner.setAttribute('aria-selected','false');
-      panePlanner.style.display = 'none'; paneGoal.style.display = '';
+    function fv_sip(monthly, annualRate, years){
+      monthly = Number(monthly) || 0;
+      annualRate = Number(annualRate) || 0;
+      years = Number(years) || 0;
+      if(monthly <= 0) return 0;
+      var r = annualRate/100/12;
+      var n = years*12;
+      if(Math.abs(r) < 1e-12) return monthly * n;
+      return monthly * ( (Math.pow(1+r, n) - 1) / r ) * (1 + r);
     }
-  }
-  tabPlanner.addEventListener('click', function(){ activateTab('planner'); });
-  tabGoal.addEventListener('click', function(){ activateTab('goal'); });
 
-  /* ---------- presets ---------- */
-  var presets = {
-    conservative: {lc:60, mc:25, sc:10, gold:5},
-    balanced:     {lc:45, mc:30, sc:15, gold:10},
-    aggressive:   {lc:30, mc:40, sc:25, gold:5},
-    moreAggressive:{lc:20, mc:45, sc:30, gold:5} // fallback comparison when already aggressive
-  };
-
-  function applyPreset(name){
-    var p = presets[name];
-    if(!p) return;
-    document.getElementById('lc').value = p.lc;
-    document.getElementById('mc').value = p.mc;
-    document.getElementById('sc').value = p.sc;
-    document.getElementById('gold').value = p.gold;
-    // mark segmented UI
-    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
-    if(name==='conservative') document.getElementById('presetCons').classList.add('active');
-    if(name==='balanced') document.getElementById('presetBal').classList.add('active');
-    if(name==='aggressive') document.getElementById('presetAgg').classList.add('active');
-    renderPlanner();
-  }
-
-  document.getElementById('presetCons').addEventListener('click', ()=>applyPreset('conservative'));
-  document.getElementById('presetBal').addEventListener('click', ()=>applyPreset('balanced'));
-  document.getElementById('presetAgg').addEventListener('click', ()=>applyPreset('aggressive'));
-
-  /* ---------- planner calculations ---------- */
-  var calcBtn = document.getElementById('calc');
-
-  function getPlannerInputState(){
-    var husband = Number(document.getElementById('husband').value||0);
-    var wife = Number(document.getElementById('wife').value||0);
-    var house = Number(document.getElementById('house').value||0);
-    var emi = Number(document.getElementById('emi').value||0);
-    var misc = Number(document.getElementById('misc').value||0);
-    var totalIncome = husband + wife;
-    var totalExpenses = house + emi + misc;
-    var investable = Math.max(0, totalIncome - totalExpenses);
-
-    var lc = Number(document.getElementById('lc').value||0);
-    var mc = Number(document.getElementById('mc').value||0);
-    var sc = Number(document.getElementById('sc').value||0);
-    var gold = Number(document.getElementById('gold').value||0);
-    var allocTotal = lc + mc + sc + gold;
-
-    var years = Number(document.getElementById('years').value||10);
-    var lc_r = Number(document.getElementById('lc_r').value||0);
-    var mc_r = Number(document.getElementById('mc_r').value||0);
-    var sc_r = Number(document.getElementById('sc_r').value||0);
-    var gold_r = Number(document.getElementById('gold_r').value||0);
-
-    var lc_sip = investable * (lc/100);
-    var mc_sip = investable * (mc/100);
-    var sc_sip = investable * (sc/100);
-    var gold_sip = investable * (gold/100);
-    var total_sip = lc_sip + mc_sip + sc_sip + gold_sip;
-
-    var fv_lc = fv_sip(lc_sip, lc_r, years);
-    var fv_mc = fv_sip(mc_sip, mc_r, years);
-    var fv_sc = fv_sip(sc_sip, sc_r, years);
-    var fv_gold = fv_sip(gold_sip, gold_r, years);
-    var fv_total = fv_lc + fv_mc + fv_sc + fv_gold;
-
-    return {
-      inputs:{husband,wife,house,emi,misc,lc,mc,sc,gold,lc_r,mc_r,sc_r,gold_r,years},
-      totals:{totalIncome,totalExpenses,investable,allocTotal,total_sip},
-      outputs:{fv_lc,fv_mc,fv_sc,fv_gold,fv_total,lc_sip,mc_sip,sc_sip,gold_sip}
-    };
-  }
-
-  var allocChart=null, fvChart=null, compareChart=null;
-
-  function renderCharts(state, compareState){
-    // Allocation pie
-    var ctxA = document.getElementById('allocChart').getContext('2d');
-    var allocData = [state.inputs.lc, state.inputs.mc, state.inputs.sc, state.inputs.gold];
-    if(allocChart) allocChart.destroy();
-    allocChart = new Chart(ctxA, {
-      type:'pie',
-      data:{
-        labels:['Large','Mid','Small','Gold'],
-        datasets:[{data:allocData, backgroundColor:['#0b74de','#0a5fb2','#ff7a59','#ffd166']}]
-      },
-      options:{plugins:{legend:{position:'bottom'}}}
-    });
-
-    // FV bar
-    var ctxF = document.getElementById('fvChart').getContext('2d');
-    var fvData = [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc, state.outputs.fv_gold];
-    if(fvChart) fvChart.destroy();
-    fvChart = new Chart(ctxF, {
-      type:'bar',
-      data:{
-        labels:['Large','Mid','Small','Gold'],
-        datasets:[{label:'Projected FV (₹)', data:fvData, backgroundColor:['#0b74de','#0a5fb2','#ff7a59','#ffd166']}]
-      },
-      options:{scales:{y:{ticks:{callback:function(v){return v>=100000? (v/100000).toFixed(1)+'L':v}}}}, plugins:{legend:{display:false}}}
-    });
-
-    // Compare chart (if provided)
-    var compEl = document.getElementById('compareChartContainer');
-    compEl.innerHTML = '<canvas id="compareChart" height="220"></canvas>';
-    var ctxC = document.getElementById('compareChart').getContext('2d');
-    if(compareState){
-      var labels = ['Large','Mid','Small','Gold'];
-      var a1 = [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc, state.outputs.fv_gold];
-      var a2 = [compareState.outputs.fv_lc, compareState.outputs.fv_mc, compareState.outputs.fv_sc, compareState.outputs.fv_gold];
-      if(compareChart) compareChart.destroy();
-      compareChart = new Chart(ctxC, {
-        type:'bar',
-        data:{
-          labels:labels,
-          datasets:[
-            {label:'Current', data:a1, backgroundColor:'#0b74de'},
-            {label:'Comparison', data:a2, backgroundColor:'#ff7a59'}
-          ]
-        },
-        options:{plugins:{legend:{position:'bottom'}}, scales:{y:{ticks:{callback:function(v){return v>=100000? (v/100000).toFixed(1)+'L':v}}}}
-      });
-    }
-  }
-
-  function renderPlanner(){
-    var state = getPlannerInputState();
-
-    // summary HTML
-    var c = '';
-    c += '<div class="panel"><h3>Quick summary</h3>';
-    c += '<div class="small">Total income: <span class="kpi">₹' + indianFormat(state.totals.totalIncome) + '</span></div>';
-    c += '<div class="small">Household: <span class="kpi">₹' + indianFormat(state.inputs.house) + '</span> • EMI: <span class="kpi">₹' + indianFormat(state.inputs.emi) + '</span> • Misc: <span class="kpi">₹' + indianFormat(state.inputs.misc) + '</span></div>';
-    c += '<div class="small">Total expenses: <span class="kpi">₹' + indianFormat(state.totals.totalExpenses) + '</span></div>';
-    c += '<div class="small">Investable per month: <span class="kpi">₹' + indianFormat(state.totals.investable) + '</span></div>';
-    c += '<div class="small">Allocation total: <span class="accent-text">' + (state.totals.allocTotal) + '%</span> ' + (state.totals.allocTotal===100 ? '<span style="color:var(--success)">✔</span>' : '<span style="color:var(--danger)">⚠ (should be 100%)</span>') + '</div>';
-    c += '</div>';
-
-    c += '<div class="panel"><h3>Monthly SIP split</h3>';
-    c += '<div class="small">Large cap: <span class="kpi">₹' + indianFormat(state.outputs.lc_sip) + '</span></div>';
-    c += '<div class="small">Mid cap: <span class="kpi">₹' + indianFormat(state.outputs.mc_sip) + '</span></div>';
-    c += '<div class="small">Small cap: <span class="kpi">₹' + indianFormat(state.outputs.sc_sip) + '</span></div>';
-    c += '<div class="small">Gold: <span class="kpi">₹' + indianFormat(state.outputs.gold_sip) + '</span></div>';
-    c += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
-    c += '<div class="small">Total SIP monthly: <span class="kpi">₹' + indianFormat(state.totals.total_sip) + '</span></div>';
-    c += '</div>';
-
-    c += '<div class="panel"><h3>Projection (' + state.inputs.years + ' yrs)</h3>';
-    c += '<div class="small">Large cap FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_lc) + '</span> at ' + state.inputs.lc_r + '% p.a.</div>';
-    c += '<div class="small">Mid cap FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_mc) + '</span> at ' + state.inputs.mc_r + '% p.a.</div>';
-    c += '<div class="small">Small cap FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_sc) + '</span> at ' + state.inputs.sc_r + '% p.a.</div>';
-    c += '<div class="small">Gold FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_gold) + '</span> at ' + state.inputs.gold_r + '% p.a.</div>';
-    c += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
-    c += '<div class="small"><strong>Total projected corpus: ₹' + indianFormat(state.outputs.fv_total) + '</strong></div>';
-    c += '</div>';
-
-    document.getElementById('plannerResults').innerHTML = c;
-
-    // choose comparison preset: next more aggressive
-    var allocTotal = state.totals.allocTotal;
-    var currentPreset = null;
-    // decide which preset matches best by checking closeness (simple)
-    function presetScore(p){
-      return Math.abs(p.lc - state.inputs.lc) + Math.abs(p.mc - state.inputs.mc) + Math.abs(p.sc - state.inputs.sc) + Math.abs(p.gold - state.inputs.gold);
-    }
-    // choose best matching preset
-    var best = ['conservative','balanced','aggressive'].reduce(function(acc,k){
-      var s = presetScore(presets[k]);
-      return s < acc.score ? {name:k,score:s} : acc;
-    }, {name:null,score:1e9});
-    currentPreset = best.name || 'balanced';
-
-    var comparePresetName = null;
-    if(currentPreset==='conservative') comparePresetName='balanced';
-    else if(currentPreset==='balanced') comparePresetName='aggressive';
-    else comparePresetName='moreAggressive';
-
-    // build compareState by applying that preset but keeping same returns and investable and years
-    var cp = presets[comparePresetName];
-    var compareState = {
-      inputs: {
-        lc: cp.lc, mc: cp.mc, sc: cp.sc, gold: cp.gold,
-        lc_r: state.inputs.lc_r, mc_r: state.inputs.mc_r, sc_r: state.inputs.sc_r, gold_r: state.inputs.gold_r,
-        years: state.inputs.years
+    function required_sip_for_target(FV, annualCagr, years){
+      FV = Number(FV) || 0;
+      var r = (Number(annualCagr) || 0)/100/12;
+      var n = Number(years) * 12;
+      if(n <= 0) return NaN;
+      if(Math.abs(r) < 1e-12){
+        return FV / n;
       }
-    };
-    // calculate SIP amounts for comparison using same investable
-    var inv = state.totals.investable;
-    compareState.inputs.lc_sip = inv * (cp.lc/100);
-    compareState.inputs.mc_sip = inv * (cp.mc/100);
-    compareState.inputs.sc_sip = inv * (cp.sc/100);
-    compareState.inputs.gold_sip = inv * (cp.gold/100);
-    compareState.outputs = {
-      fv_lc: fv_sip(compareState.inputs.lc_sip, compareState.inputs.lc_r, compareState.inputs.years),
-      fv_mc: fv_sip(compareState.inputs.mc_sip, compareState.inputs.mc_r, compareState.inputs.years),
-      fv_sc: fv_sip(compareState.inputs.sc_sip, compareState.inputs.sc_r, compareState.inputs.years),
-      fv_gold: fv_sip(compareState.inputs.gold_sip, compareState.inputs.gold_r, compareState.inputs.years)
-    };
-    compareState.outputs.fv_total = compareState.outputs.fv_lc + compareState.outputs.fv_mc + compareState.outputs.fv_sc + compareState.outputs.fv_gold;
-
-    // render charts
-    renderCharts(state, compareState);
-
-    // compare summary text
-    var compHtml = '';
-    compHtml += '<div style="display:flex;gap:12px;flex-wrap:wrap">';
-    compHtml += '<div class="panel" style="flex:1"><strong>Current</strong><div class="small">Total FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_total) + '</span></div></div>';
-    compHtml += '<div class="panel" style="flex:1"><strong>' + (comparePresetName==='moreAggressive'?'More Aggressive':''+comparePresetName.charAt(0).toUpperCase()+comparePresetName.slice(1)) + '</strong><div class="small">Total FV: <span class="kpi">₹' + indianFormat(compareState.outputs.fv_total) + '</span></div></div>';
-    compHtml += '</div>';
-    document.getElementById('compareBlock').innerHTML = compHtml;
-
-    // store last results for export
-    window._plannerState = { state, compareState };
-  }
-
-  calcBtn.addEventListener('click', renderPlanner);
-  renderPlanner();
-
-  /* ---------- goal planner ---------- */
-  var calcGoalBtn = document.getElementById('calcGoal');
-  calcGoalBtn.addEventListener('click', function(){
-    var FV = Number(document.getElementById('target').value||0);
-    var years = Number(document.getElementById('goalYears').value||0);
-    var cagr = Number(document.getElementById('goalCagr').value||0);
-    var infl = Number(document.getElementById('goalInfl').value||0);
-
-    var sip = required_sip_for_target(FV, cagr, years); // monthly
-    var months = years * 12;
-    var total_invested = sip * months;
-    var wealth_created = FV - total_invested;
-    var real_target = FV / Math.pow(1 + infl/100, years);
-
-    var html = '<div class="panel"><h3>Goal Planner result</h3>';
-    html += '<div class="small">Target (nominal): <span class="kpi">₹' + indianFormat(FV) + '</span></div>';
-    html += '<div class="small">Target in today\'s rupees: <span class="kpi">₹' + indianFormat(real_target) + '</span> (inflation at ' + infl + '% p.a.)</div>';
-    html += '<div class="small">Required monthly SIP: <span class="kpi">₹' + indianFormat(sip) + '</span> (for ' + years + ' years at ' + cagr + '% p.a.)</div>';
-    html += '<div class="small">Total invested: <span class="kpi">₹' + indianFormat(total_invested) + '</span></div>';
-    html += '<div class="small">Wealth (gain): <span class="kpi">₹' + indianFormat(wealth_created) + '</span></div>';
-    html += '</div>';
-    document.getElementById('goalResult').innerHTML = html;
-
-    window._goalState = { inputs:{FV,years,cagr,infl}, outputs:{sip,total_invested,wealth_created,real_target} };
-  });
-  // initial run
-  calcGoalBtn.click();
-
-  /* ---------- reset ---------- */
-  document.getElementById('resetBtn').addEventListener('click', function(){
-    var defaults = {
-      husband:100000, wife:100000, house:60000, emi:20000, misc:20000,
-      lc:40, mc:30, sc:20, gold:10,
-      lc_r:11, mc_r:13, sc_r:15, gold_r:7, years:10,
-      target:10000000, goalYears:15, goalCagr:12, goalInfl:5
-    };
-    Object.keys(defaults).forEach(function(id){
-      var el = document.getElementById(id);
-      if(el) el.value = defaults[id];
-    });
-    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('presetBal').classList.add('active');
-    renderPlanner();
-    calcGoalBtn.click();
-  });
-
-  /* ---------- Excel export using SheetJS ---------- */
-  document.getElementById('downloadBtn').addEventListener('click', function(){
-    var planner = window._plannerState && window._plannerState.state;
-    var compare = window._plannerState && window._plannerState.compareState;
-    var goal = window._goalState || {};
-
-    // Build summary sheet data as arrays (header row then rows)
-    var summaryRows = [
-      ["Field","Value"]
-    ];
-    // incomes & expenses
-    if(planner){
-      summaryRows.push(["Husband monthly income (₹)", planner.inputs.husband || ""]);
-      summaryRows.push(["Wife monthly income (₹)", planner.inputs.wife || ""]);
-      summaryRows.push(["Household expenses (₹)", planner.inputs.house || ""]);
-      summaryRows.push(["EMI (₹)", planner.inputs.emi || ""]);
-      summaryRows.push(["Misc expenses (₹)", planner.inputs.misc || ""]);
-      summaryRows.push(["Total expenses (₹)", planner.totals.totalExpenses || ""]);
-      summaryRows.push(["Investable per month (₹)", planner.totals.investable || ""]);
-      summaryRows.push([]);
-      summaryRows.push(["Allocation Category","Percent","Monthly SIP (₹)"]);
-      summaryRows.push(["Large cap", planner.inputs.lc || "", planner.outputs.lc_sip || ""]);
-      summaryRows.push(["Mid cap", planner.inputs.mc || "", planner.outputs.mc_sip || ""]);
-      summaryRows.push(["Small cap", planner.inputs.sc || "", planner.outputs.sc_sip || ""]);
-      summaryRows.push(["Bullions (Gold)", planner.inputs.gold || "", planner.outputs.gold_sip || ""]);
-      summaryRows.push(["Total SIP monthly (₹)", planner.totals.total_sip || ""]);
-      summaryRows.push([]);
-      summaryRows.push(["Projection years", planner.inputs.years || ""]);
-      summaryRows.push(["Large cap FV (nominal)", planner.outputs.fv_lc || ""]);
-      summaryRows.push(["Mid cap FV (nominal)", planner.outputs.fv_mc || ""]);
-      summaryRows.push(["Small cap FV (nominal)", planner.outputs.fv_sc || ""]);
-      summaryRows.push(["Gold FV (nominal)", planner.outputs.fv_gold || ""]);
-      summaryRows.push(["Total projected corpus (nominal)", planner.outputs.fv_total || ""]);
-    } else {
-      summaryRows.push(["No planner results available"]);
+      return FV * r / ( (Math.pow(1+r, n) - 1) * (1 + r) );
     }
 
-    // Goal planner sheet
-    var goalRows = [
-      ["Field","Value"]
-    ];
-    if(goal.inputs){
-      goalRows.push(["Target Corpus (₹)", goal.inputs.FV || ""]);
-      goalRows.push(["Years to reach", goal.inputs.years || ""]);
-      goalRows.push(["Expected CAGR %", goal.inputs.cagr || ""]);
-      goalRows.push(["Inflation %", goal.inputs.infl || ""]);
-      goalRows.push([]);
-      goalRows.push(["Required monthly SIP (₹)", goal.outputs ? goal.outputs.sip : ""]);
-      goalRows.push(["Total invested (₹)", goal.outputs ? goal.outputs.total_invested : ""]);
-      goalRows.push(["Wealth (gain) (₹)", goal.outputs ? goal.outputs.wealth_created : ""]);
-      goalRows.push(["Real target (today Rs) (₹)", goal.outputs ? goal.outputs.real_target : ""]);
-    } else {
-      goalRows.push(["No goal results available"]);
-    }
+    /* ---------- element helpers ---------- */
+    function $id(id){ return document.getElementById(id); }
+    function on(id, evt, fn){ var el = $id(id); if(el) el.addEventListener(evt, fn); else safeLog('Missing element', id); }
 
-    // compare scenario sheet
-    var compRows = [["Category","Current FV (₹)","Comparison FV (₹)"]];
-    if(planner && compare){
-      compRows.push(["Large", planner.outputs.fv_lc || 0, compare.outputs.fv_lc || 0]);
-      compRows.push(["Mid", planner.outputs.fv_mc || 0, compare.outputs.fv_mc || 0]);
-      compRows.push(["Small", planner.outputs.fv_sc || 0, compare.outputs.fv_sc || 0]);
-      compRows.push(["Gold", planner.outputs.fv_gold || 0, compare.outputs.fv_gold || 0]);
-      compRows.push(["Total", planner.outputs.fv_total || 0, compare.outputs.fv_total || 0]);
-    } else {
-      compRows.push(["No compare data"]);
-    }
+    /* ---------- tab logic ---------- */
+    var tabPlanner = $id('tabPlanner'), tabGoal = $id('tabGoal');
+    var panePlanner = $id('panePlanner'), paneGoal = $id('paneGoal');
 
-    // normalize numbers where possible
-    function normRows(rows){
-      return rows.map(function(r){
-        return r.map(function(cell){
-          if(typeof cell === 'number') return cell;
-          if(typeof cell === 'string' && cell.replace(/,/g,'').match(/^\d+(\.\d+)?$/)) return Number(cell.replace(/,/g,''));
-          return cell;
-        });
-      });
-    }
-
-    var wsSummary = XLSX.utils.aoa_to_sheet(normRows(summaryRows));
-    var wsGoal = XLSX.utils.aoa_to_sheet(normRows(goalRows));
-    var wsComp = XLSX.utils.aoa_to_sheet(normRows(compRows));
-
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
-    XLSX.utils.book_append_sheet(wb, wsGoal, "Goal Planner");
-    XLSX.utils.book_append_sheet(wb, wsComp, "Compare");
-
-    var wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-    var blob = new Blob([wbout], {type:"application/octet-stream"});
-    var fname = "SIP-Plan-" + (new Date()).toISOString().slice(0,10) + ".xlsx";
-    var link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = fname;
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(function(){ URL.revokeObjectURL(link.href); document.body.removeChild(link); }, 3000);
-  });
-
-  /* ---------- initial presets state ---------- */
-  document.getElementById('presetBal').classList.add('active');
-
-  /* ---------- simple save/restore in localStorage (optional) ---------- */
-  function saveLocal(){
-    try{
-      var data = {
-        inputs: getPlannerInputState().inputs,
-        goal: window._goalState && window._goalState.inputs
-      };
-      localStorage.setItem('sip_planner_saved', JSON.stringify(data));
-    }catch(e){}
-  }
-  function restoreLocal(){
-    try{
-      var raw = localStorage.getItem('sip_planner_saved');
-      if(!raw) return;
-      var data = JSON.parse(raw);
-      if(data.inputs){
-        Object.keys(data.inputs).forEach(function(k){
-          var el = document.getElementById(k);
-          if(el) el.value = data.inputs[k];
-        });
+    function activateTab(tabName){
+      if(!tabPlanner || !tabGoal || !panePlanner || !paneGoal) return;
+      if(tabName === 'planner'){
+        tabPlanner.classList.add('active'); tabPlanner.setAttribute('aria-selected','true');
+        tabGoal.classList.remove('active'); tabGoal.setAttribute('aria-selected','false');
+        panePlanner.style.display = ''; paneGoal.style.display = 'none';
+      } else {
+        tabGoal.classList.add('active'); tabGoal.setAttribute('aria-selected','true');
+        tabPlanner.classList.remove('active'); tabPlanner.setAttribute('aria-selected','false');
+        panePlanner.style.display = 'none'; paneGoal.style.display = '';
       }
-      if(data.goal){
-        Object.keys(data.goal).forEach(function(k){
-          var el = document.getElementById(k);
-          if(el) el.value = data.goal[k];
-        });
-      }
+    }
+    if(tabPlanner) tabPlanner.addEventListener('click', function(){ activateTab('planner'); });
+    if(tabGoal) tabGoal.addEventListener('click', function(){ activateTab('goal'); });
+
+    /* ---------- presets ---------- */
+    var presets = {
+      conservative: {lc:60, mc:25, sc:10, gold:5},
+      balanced:     {lc:45, mc:30, sc:15, gold:10},
+      aggressive:   {lc:30, mc:40, sc:25, gold:5},
+      moreAggressive:{lc:20, mc:45, sc:30, gold:5}
+    };
+
+    function applyPreset(name){
+      var p = presets[name];
+      if(!p){ safeLog('Preset not found', name); return; }
+      var elLc = $id('lc'), elMc = $id('mc'), elSc = $id('sc'), elGold = $id('gold');
+      if(elLc) elLc.value = p.lc;
+      if(elMc) elMc.value = p.mc;
+      if(elSc) elSc.value = p.sc;
+      if(elGold) elGold.value = p.gold;
+      document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+      if(name==='conservative' && $id('presetCons')) $id('presetCons').classList.add('active');
+      if(name==='balanced' && $id('presetBal')) $id('presetBal').classList.add('active');
+      if(name==='aggressive' && $id('presetAgg')) $id('presetAgg').classList.add('active');
       renderPlanner();
-      if(window._goalState) calcGoalBtn.click();
-    }catch(e){}
-  }
-  // restore on load
-  restoreLocal();
-  // save on changes (debounced)
-  var saveTimer = null;
-  document.querySelectorAll('input,select').forEach(function(el){
-    el.addEventListener('input', function(){
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveLocal, 800);
-    });
-  });
+    }
 
-})();
+    on('presetCons','click', ()=>applyPreset('conservative'));
+    on('presetBal','click', ()=>applyPreset('balanced'));
+    on('presetAgg','click', ()=>applyPreset('aggressive'));
+
+    /* ---------- planner calculations & charts ---------- */
+    function getPlannerInputState(){
+      var husband = Number($id('husband')?.value||0);
+      var wife = Number($id('wife')?.value||0);
+      var house = Number($id('house')?.value||0);
+      var emi = Number($id('emi')?.value||0);
+      var misc = Number($id('misc')?.value||0);
+      var totalIncome = husband + wife;
+      var totalExpenses = house + emi + misc;
+      var investable = Math.max(0, totalIncome - totalExpenses);
+
+      var lc = Number($id('lc')?.value||0);
+      var mc = Number($id('mc')?.value||0);
+      var sc = Number($id('sc')?.value||0);
+      var gold = Number($id('gold')?.value||0);
+      var allocTotal = lc + mc + sc + gold;
+
+      var years = Number($id('years')?.value||10);
+      var lc_r = Number($id('lc_r')?.value||0);
+      var mc_r = Number($id('mc_r')?.value||0);
+      var sc_r = Number($id('sc_r')?.value||0);
+      var gold_r = Number($id('gold_r')?.value||0);
+
+      var lc_sip = investable * (lc/100);
+      var mc_sip = investable * (mc/100);
+      var sc_sip = investable * (sc/100);
+      var gold_sip = investable * (gold/100);
+      var total_sip = lc_sip + mc_sip + sc_sip + gold_sip;
+
+      var fv_lc = fv_sip(lc_sip, lc_r, years);
+      var fv_mc = fv_sip(mc_sip, mc_r, years);
+      var fv_sc = fv_sip(sc_sip, sc_r, years);
+      var fv_gold = fv_sip(gold_sip, gold_r, years);
+      var fv_total = fv_lc + fv_mc + fv_sc + fv_gold;
+
+      return {
+        inputs:{husband,wife,house,emi,misc,lc,mc,sc,gold,lc_r,mc_r,sc_r,gold_r,years},
+        totals:{totalIncome,totalExpenses,investable,allocTotal,total_sip},
+        outputs:{fv_lc,fv_mc,fv_sc,fv_gold,fv_total,lc_sip,mc_sip,sc_sip,gold_sip}
+      };
+    }
+
+    var allocChart=null, fvChart=null, compareChart=null;
+
+    function renderCharts(state, compareState){
+      try {
+        var allocEl = $id('allocChart');
+        if(allocEl){
+          var ctxA = allocEl.getContext('2d');
+          var allocData = [state.inputs.lc, state.inputs.mc, state.inputs.sc, state.inputs.gold];
+          if(allocChart) allocChart.destroy();
+          allocChart = new Chart(ctxA, {
+            type:'pie',
+            data:{
+              labels:['Large','Mid','Small','Gold'],
+              datasets:[{data:allocData, backgroundColor:['#0b74de','#0a5fb2','#ff7a59','#ffd166']}]
+            },
+            options:{plugins:{legend:{position:'bottom'}}}
+          });
+        }
+
+        var fvEl = $id('fvChart');
+        if(fvEl){
+          var ctxF = fvEl.getContext('2d');
+          var fvData = [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc, state.outputs.fv_gold];
+          if(fvChart) fvChart.destroy();
+          fvChart = new Chart(ctxF, {
+            type:'bar',
+            data:{
+              labels:['Large','Mid','Small','Gold'],
+              datasets:[{label:'Projected FV (₹)', data:fvData, backgroundColor:['#0b74de','#0a5fb2','#ff7a59','#ffd166']}]
+            },
+            options:{scales:{y:{ticks:{callback:function(v){ return v>=100000? (v/100000).toFixed(1)+'L': v }}} , plugins:{legend:{display:false}}}
+          });
+        }
+
+        var compEl = $id('compareChartContainer');
+        if(compEl){
+          compEl.innerHTML = '<canvas id="compareChart" height="220"></canvas>';
+          var compareCanvas = $id('compareChart');
+          if(compareCanvas && compareState){
+            var ctxC = compareCanvas.getContext('2d');
+            var labels = ['Large','Mid','Small','Gold'];
+            var a1 = [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc, state.outputs.fv_gold];
+            var a2 = [compareState.outputs.fv_lc, compareState.outputs.fv_mc, compareState.outputs.fv_sc, compareState.outputs.fv_gold];
+            if(compareChart) compareChart.destroy();
+            compareChart = new Chart(ctxC, {
+              type:'bar',
+              data:{
+                labels:labels,
+                datasets:[
+                  {label:'Current', data:a1, backgroundColor:'#0b74de'},
+                  {label:'Comparison', data:a2, backgroundColor:'#ff7a59'}
+                ]
+              },
+              options:{plugins:{legend:{position:'bottom'}}, scales:{y:{ticks:{callback:function(v){ return v>=100000? (v/100000).toFixed(1)+'L': v }}}}
+            });
+          }
+        }
+      } catch(chartErr){
+        safeLog('Chart error', chartErr);
+        // non-fatal; continue
+      }
+    }
+
+    function renderPlanner(){
+      try {
+        var state = getPlannerInputState();
+
+        // summary HTML
+        var c = '';
+        c += '<div class="panel"><h3>Quick summary</h3>';
+        c += '<div class="small">Total income: <span class="kpi">₹' + indianFormat(state.totals.totalIncome) + '</span></div>';
+        c += '<div class="small">Household: <span class="kpi">₹' + indianFormat(state.inputs.house) + '</span> • EMI: <span class="kpi">₹' + indianFormat(state.inputs.emi) + '</span> • Misc: <span class="kpi">₹' + indianFormat(state.inputs.misc) + '</span></div>';
+        c += '<div class="small">Total expenses: <span class="kpi">₹' + indianFormat(state.totals.totalExpenses) + '</span></div>';
+        c += '<div class="small">Investable per month: <span class="kpi">₹' + indianFormat(state.totals.investable) + '</span></div>';
+        c += '<div class="small">Allocation total: <span class="accent-text">' + (state.totals.allocTotal) + '%</span> ' + (state.totals.allocTotal===100 ? '<span style="color:var(--success)">✔</span>' : '<span style="color:var(--danger)">⚠ (should be 100%)</span>') + '</div>';
+        c += '</div>';
+
+        c += '<div class="panel"><h3>Monthly SIP split</h3>';
+        c += '<div class="small">Large cap: <span class="kpi">₹' + indianFormat(state.outputs.lc_sip) + '</span></div>';
+        c += '<div class="small">Mid cap: <span class="kpi">₹' + indianFormat(state.outputs.mc_sip) + '</span></div>';
+        c += '<div class="small">Small cap: <span class="kpi">₹' + indianFormat(state.outputs.sc_sip) + '</span></div>';
+        c += '<div class="small">Gold: <span class="kpi">₹' + indianFormat(state.outputs.gold_sip) + '</span></div>';
+        c += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
+        c += '<div class="small">Total SIP monthly: <span class="kpi">₹' + indianFormat(state.totals.total_sip) + '</span></div>';
+        c += '</div>';
+
+        c += '<div class="panel"><h3>Projection (' + state.inputs.years + ' yrs)</h3>';
+        c += '<div class="small">Large cap FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_lc) + '</span> at ' + state.inputs.lc_r + '% p.a.</div>';
+        c += '<div class="small">Mid cap FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_mc) + '</span> at ' + state.inputs.mc_r + '% p.a.</div>';
+        c += '<div class="small">Small cap FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_sc) + '</span> at ' + state.inputs.sc_r + '% p.a.</div>';
+        c += '<div class="small">Gold FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_gold) + '</span> at ' + state.inputs.gold_r + '% p.a.</div>';
+        c += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
+        c += '<div class="small"><strong>Total projected corpus: ₹' + indianFormat(state.outputs.fv_total) + '</strong></div>';
+        c += '</div>';
+
+        $id('plannerResults').innerHTML = c;
+
+        // choose comparison preset by closeness
+        function presetScore(p){
+          return Math.abs(p.lc - state.inputs.lc) + Math.abs(p.mc - state.inputs.mc) + Math.abs(p.sc - state.inputs.sc) + Math.abs(p.gold - state.inputs.gold);
+        }
+        var best = ['conservative','balanced','aggressive'].reduce(function(acc,k){
+          var s = presetScore(presets[k]);
+          return s < acc.score ? {name:k,score:s} : acc;
+        }, {name:null,score:1e9});
+        var currentPreset = best.name || 'balanced';
+        var comparePresetName = currentPreset==='conservative' ? 'balanced' : currentPreset==='balanced' ? 'aggressive' : 'moreAggressive';
+        var cp = presets[comparePresetName] || presets['aggressive'];
+
+        var compareState = {
+          inputs: {
+            lc: cp.lc, mc: cp.mc, sc: cp.sc, gold: cp.gold,
+            lc_r: state.inputs.lc_r, mc_r: state.inputs.mc_r, sc_r: state.inputs.sc_r, gold_r: state.inputs.gold_r,
+            years: state.inputs.years
+          }
+        };
+        var inv = state.totals.investable;
+        compareState.inputs.lc_sip = inv * (cp.lc/100);
+        compareState.inputs.mc_sip = inv * (cp.mc/100);
+        compareState.inputs.sc_sip = inv * (cp.sc/100);
+        compareState.inputs.gold_sip = inv * (cp.gold/100);
+        compareState.outputs = {
+          fv_lc: fv_sip(compareState.inputs.lc_sip, compareState.inputs.lc_r, compareState.inputs.years),
+          fv_mc: fv_sip(compareState.inputs.mc_sip, compareState.inputs.mc_r, compareState.inputs.years),
+          fv_sc: fv_sip(compareState.inputs.sc_sip, compareState.inputs.sc_r, compareState.inputs.years),
+          fv_gold: fv_sip(compareState.inputs.gold_sip, compareState.inputs.gold_r, compareState.inputs.years)
+        };
+        compareState.outputs.fv_total = compareState.outputs.fv_lc + compareState.outputs.fv_mc + compareState.outputs.fv_sc + compareState.outputs.fv_gold;
+
+        renderCharts(state, compareState);
+
+        var compHtml = '';
+        compHtml += '<div style="display:flex;gap:12px;flex-wrap:wrap">';
+        compHtml += '<div class="panel" style="flex:1"><strong>Current</strong><div class="small">Total FV: <span class="kpi">₹' + indianFormat(state.outputs.fv_total) + '</span></div></div>';
+        compHtml += '<div class="panel" style="flex:1"><strong>' + (comparePresetName==='moreAggressive' ? 'More Aggressive' : comparePresetName.charAt(0).toUpperCase() + comparePresetName.slice(1)) + '</strong><div class="small">Total FV: <span class="kpi">₹' + indianFormat(compareState.outputs.fv_total) + '</span></div></div>';
+        compHtml += '</div>';
+        $id('compareBlock').innerHTML = compHtml;
+
+        window._plannerState = { state, compareState };
+
+      } catch(e){
+        safeLog('Render planner error', e);
+        var el = $id('plannerResults');
+        if(el) el.innerHTML = '<div class="error-banner">An error occurred while calculating. Please refresh the page. (see console)</div>';
+      }
+    }
+
+    on('calc','click', renderPlanner);
+    // auto run after DOM ready
+    setTimeout(renderPlanner, 120);
+
+    /* ---------- goal planner ---------- */
+    on('calcGoal','click', function(){
+      try {
+        var FV = Number($id('target')?.value||0);
+        var years = Number($id('goalYears')?.value||0);
+        var cagr = Number($id('goalCagr')?.value||0);
+        var infl = Number($id('goalInfl')?.value||0);
+
+        var sip = required_sip_for_target(FV, cagr, years); // monthly
+        var months = years * 12;
+        var total_invested = sip * months;
+        var wealth_created = FV - total_invested;
+        var real_target = FV / Math.pow(1 + infl/100, years);
+
+        var html = '<div class="panel"><h3>Goal Planner result</h3>';
+        html += '<div class="small">Target (nominal): <span class="kpi">₹' + indianFormat(FV) + '</span></div>';
+        html += '<div class="small">Target in today\'s rupees: <span class="kpi">₹' + indianFormat(real_target) + '</span> (inflation at ' + infl + '% p.a.)</div>';
+        html += '<div class="small">Required monthly SIP: <span class="kpi">₹' + indianFormat(sip) + '</span> (for ' + years + ' years at ' + cagr + '% p.a.)</div>';
+        html += '<div class="small">Total invested: <span class="kpi">₹' + indianFormat(total_invested) + '</span></div>';
+        html += '<div class="small">Wealth (gain): <span class="kpi">₹' + indianFormat(wealth_created) + '</span></div>';
+        html += '</div>';
+        $id('goalResult').innerHTML = html;
+
+        window._goalState = { inputs:{FV,years,cagr,infl}, outputs:{sip,total_invested,wealth_created,real_target} };
+      } catch(e){
+        safeLog('Goal calc error', e);
+        if($id('goalResult')) $id('goalResult').innerHTML = '<div class="error-banner">Goal calculation failed. Check inputs.</div>';
+      }
+    });
+
+    // initial run for Goal
+    setTimeout(function(){ if($id('calcGoal')) $id('calcGoal').click(); }, 200);
+
+    /* ---------- reset ---------- */
+    on('resetBtn','click', function(){
+      var defaults = {
+        husband:100000, wife:100000, house:60000, emi:20000, misc:20000,
+        lc:40, mc:30, sc:20, gold:10,
+        lc_r:11, mc_r:13, sc_r:15, gold_r:7, years:10,
+        target:10000000, goalYears:15, goalCagr:12, goalInfl:5
+      };
+      Object.keys(defaults).forEach(function(id){
+        var el = $id(id);
+        if(el) el.value = defaults[id];
+      });
+      document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+      if($id('presetBal')) $id('presetBal').classList.add('active');
+      renderPlanner();
+      if($id('calcGoal')) $id('calcGoal').click();
+    });
+
+    /* ---------- Excel export using SheetJS ---------- */
+    on('downloadBtn','click', function(){
+      try {
+        var planner = window._plannerState && window._plannerState.state;
+        var compare = window._plannerState && window._plannerState.compareState;
+        var goal = window._goalState || {};
+
+        var summaryRows = [["Field","Value"]];
+        if(planner){
+          summaryRows.push(["Husband monthly income (₹)", planner.inputs.husband || ""]);
+          summaryRows.push(["Wife monthly income (₹)", planner.inputs.wife || ""]);
+          summaryRows.push(["Household expenses (₹)", planner.inputs.house || ""]);
+          summaryRows.push(["EMI (₹)", planner.inputs.emi || ""]);
+          summaryRows.push(["Misc expenses (₹)", planner.inputs.misc || ""]);
+          summaryRows.push(["Total expenses (₹)", planner.totals.totalExpenses || ""]);
+          summaryRows.push(["Investable per month (₹)", planner.totals.investable || ""]);
+          summaryRows.push([]);
+          summaryRows.push(["Allocation Category","Percent","Monthly SIP (₹)"]);
+          summaryRows.push(["Large cap", planner.inputs.lc || "", planner.outputs.lc_sip || ""]);
+          summaryRows.push(["Mid cap", planner.inputs.mc || "", planner.outputs.mc_sip || ""]);
+          summaryRows.push(["Small cap", planner.inputs.sc || "", planner.outputs.sc_sip || ""]);
+          summaryRows.push(["Bullions (Gold)", planner.inputs.gold || "", planner.outputs.gold_sip || ""]);
+          summaryRows.push(["Total SIP monthly (₹)", planner.totals.total_sip || ""]);
+          summaryRows.push([]);
+          summaryRows.push(["Projection years", planner.inputs.years || ""]);
+          summaryRows.push(["Large cap FV (nominal)", planner.outputs.fv_lc || ""]);
+          summaryRows.push(["Mid cap FV (nominal)", planner.outputs.fv_mc || ""]);
+          summaryRows.push(["Small cap FV (nominal)", planner.outputs.fv_sc || ""]);
+          summaryRows.push(["Gold FV (nominal)", planner.outputs.fv_gold || ""]);
+          summaryRows.push(["Total projected corpus (nominal)", planner.outputs.fv_total || ""]);
+        } else {
+          summaryRows.push(["No planner results available"]);
+        }
+
+        var goalRows = [["Field","Value"]];
+        if(goal.inputs){
+          goalRows.push(["Target Corpus (₹)", goal.inputs.FV || ""]);
+          goalRows.push(["Years to reach", goal.inputs.years || ""]);
+          goalRows.push(["Expected CAGR %", goal.inputs.cagr || ""]);
+          goalRows.push(["Inflation %", goal.inputs.infl || ""]);
+          goalRows.push([]);
+          goalRows.push(["Required monthly SIP (₹)", goal.outputs ? goal.outputs.sip : ""]);
+          goalRows.push(["Total invested (₹)", goal.outputs ? goal.outputs.total_invested : ""]);
+          goalRows.push(["Wealth (gain) (₹)", goal.outputs ? goal.outputs.wealth_created : ""]);
+          goalRows.push(["Real target (today Rs) (₹)", goal.outputs ? goal.outputs.real_target : ""]);
+        } else {
+          goalRows.push(["No goal results available"]);
+        }
+
+        var compRows = [["Category","Current FV (₹)","Comparison FV (₹)"]];
+        if(planner && compare){
+          compRows.push(["Large", planner.outputs.fv_lc || 0, compare.outputs.fv_lc || 0]);
+          compRows.push(["Mid", planner.outputs.fv_mc || 0, compare.outputs.fv_mc || 0]);
+          compRows.push(["Small", planner.outputs.fv_sc || 0, compare.outputs.fv_sc || 0]);
+          compRows.push(["Gold", planner.outputs.fv_gold || 0, compare.outputs.fv_gold || 0]);
+          compRows.push(["Total", planner.outputs.fv_total || 0, compare.outputs.fv_total || 0]);
+        } else {
+          compRows.push(["No compare data"]);
+        }
+
+        function normRows(rows){
+          return rows.map(function(r){
+            return r.map(function(cell){
+              if(typeof cell === 'number') return cell;
+              if(typeof cell === 'string' && cell.replace(/,/g,'').match(/^\d+(\.\d+)?$/)) return Number(cell.replace(/,/g,''));
+              return cell;
+            });
+          });
+        }
+
+        var wsSummary = XLSX.utils.aoa_to_sheet(normRows(summaryRows));
+        var wsGoal = XLSX.utils.aoa_to_sheet(normRows(goalRows));
+        var wsComp = XLSX.utils.aoa_to_sheet(normRows(compRows));
+
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+        XLSX.utils.book_append_sheet(wb, wsGoal, "Goal Planner");
+        XLSX.utils.book_append_sheet(wb, wsComp, "Compare");
+
+        var wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+        var blob = new Blob([wbout], {type:"application/octet-stream"});
+        var fname = "SIP-Plan-" + (new Date()).toISOString().slice(0,10) + ".xlsx";
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fname;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(function(){ URL.revokeObjectURL(link.href); document.body.removeChild(link); }, 3000);
+
+      } catch(e){
+        safeLog('Download error', e);
+        alert('Could not create Excel file. Check console for details.');
+      }
+    });
+
+    /* ---------- presets initial ---------- */
+    if($id('presetBal')) $id('presetBal').classList.add('active');
+
+    /* ---------- local save/restore ---------- */
+    function saveLocal(){
+      try{
+        var data = { inputs: getPlannerInputState().inputs, goal: window._goalState && window._goalState.inputs };
+        localStorage.setItem('sip_planner_saved', JSON.stringify(data));
+      }catch(e){}
+    }
+    function restoreLocal(){
+      try{
+        var raw = localStorage.getItem('sip_planner_saved');
+        if(!raw) return;
+        var data = JSON.parse(raw);
+        if(data.inputs){
+          Object.keys(data.inputs).forEach(function(k){
+            var el = $id(k);
+            if(el) el.value = data.inputs[k];
+          });
+        }
+        if(data.goal){
+          Object.keys(data.goal).forEach(function(k){
+            var el = $id(k);
+            if(el) el.value = data.goal[k];
+          });
+        }
+        renderPlanner();
+        if(window._goalState) if($id('calcGoal')) $id('calcGoal').click();
+      }catch(e){}
+    }
+    restoreLocal();
+    var saveTimer = null;
+    document.querySelectorAll('input,select').forEach(function(el){
+      el.addEventListener('input', function(){
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveLocal, 800);
+      });
+    });
+
+  } catch(initErr){
+    if(window.console) console.error('Init error', initErr);
+    var resultsEl = document.getElementById('plannerResults');
+    if(resultsEl) resultsEl.innerHTML = '<div class="error-banner">The planner failed to initialize. Try reloading the page. (See console)</div>';
+  }
+
+});
 </script>
 </body>
 </html>

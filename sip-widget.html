@@ -25,6 +25,7 @@
   .panel{background:#fbfdff;border-radius:10px;padding:12px;border:1px solid #eef3fb}
   .muted{color:var(--muted);font-size:13px}
   .result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px}
+  .small{font-size:13px;color:#111}
   .kpi{font-size:16px;font-weight:700}
   .accent-text{color:var(--accent2);font-weight:700}
   .segmented{display:inline-flex;border-radius:10px;overflow:hidden;border:1px solid #e6e9ef}
@@ -57,6 +58,7 @@
       <button id="tabGoal" class="btn">Goal Planner</button>
     </div>
 
+    <!-- Planner -->
     <div id="panePlanner">
       <div class="grid">
         <div><label for="husband">Husband monthly income (₹)</label><input id="husband" type="number" value="100000"></div>
@@ -92,7 +94,12 @@
 
       <div class="controls">
         <div style="min-width:160px"><label for="years">Projection years</label>
-          <select id="years"><option>5</option><option>10</option><option selected>15</option><option>20</option></select>
+          <select id="years">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15" selected>15</option>
+            <option value="20">20</option>
+          </select>
         </div>
         <div style="min-width:120px"><label for="lc_r">Large cap CAGR %</label><input id="lc_r" type="number" value="9"></div>
         <div style="min-width:120px"><label for="mc_r">Mid cap CAGR %</label><input id="mc_r" type="number" value="12"></div>
@@ -127,6 +134,7 @@
       </div>
     </div>
 
+    <!-- Goal Planner -->
     <div id="paneGoal" style="display:none">
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <div style="min-width:200px"><label for="target">Target Corpus (₹)</label><input id="target" type="number" value="10000000"></div>
@@ -140,6 +148,7 @@
         </div>
       </div>
       <div id="goalResult" class="panel" style="margin-top:14px"></div>
+      <div class="muted" style="margin-top:10px">Formula: SIP = FV × r / ((1+r)^n − 1) × (1+r)</div>
     </div>
 
     <div class="panel" style="margin-top:12px">
@@ -170,154 +179,264 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
   const $ = id => document.getElementById(id);
 
-  const fmt = (n, c = false) => {
-    if (isNaN(n)) return "-";
-    const a = Math.abs(n);
-    if (a >= 1e7) return c ? (n/1e7).toFixed(2)+" Cr" : "₹"+(n/1e7).toFixed(2)+" Cr";
-    if (a >= 1e5) return c ? (n/1e5).toFixed(2)+" L" : "₹"+(n/1e5).toFixed(2)+" L";
-    return c ? n.toLocaleString('en-IN') : "₹"+n.toLocaleString('en-IN');
+  // Indian number formatting
+  function fmt(n, compact = false) {
+    if (isNaN(n) || n === null) return "-";
+    const abs = Math.abs(n);
+    if (abs >= 10000000) return compact ? (n/10000000).toFixed(2)+" Cr" : "₹"+(n/10000000).toFixed(2)+" Cr";
+    if (abs >= 100000) return compact ? (n/100000).toFixed(2)+" L" : "₹"+(n/100000).toFixed(2)+" L";
+    return compact ? n.toLocaleString('en-IN') : "₹"+n.toLocaleString('en-IN');
+  }
+
+  // Future value of SIP
+  function fvSIP(monthly, rate, years) {
+    if (!monthly) return 0;
+    const r = rate / 100 / 12;
+    const n = years * 12;
+    if (Math.abs(r) < 1e-12) return monthly * n;
+    return monthly * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
+  }
+
+  // Required SIP for target
+  function reqSIP(fv, cagr, years) {
+    const r = cagr / 100 / 12;
+    const n = years * 12;
+    if (n <= 0) return NaN;
+    if (Math.abs(r) < 1e-12) return fv / n;
+    return fv * r / ((Math.pow(1 + r, n) - 1) * (1 + r));
+  }
+
+  const presets = {
+    conservative: {lc:50, mc:30, sc:20},
+    balanced:     {lc:45, mc:30, sc:25},
+    aggressive:   {lc:35, mc:35, sc:30}
   };
 
-  const fvSIP = (m, r, y) => {
-    if (!m) return 0;
-    const i = r/100/12, n = y*12;
-    if (Math.abs(i)<1e-12) return m*n;
-    return m * ((Math.pow(1+i,n)-1)/i) * (1+i);
-  };
+  // Safe event binding
+  function on(id, event, fn) {
+    const el = $(id);
+    if (el) el.addEventListener(event, fn);
+  }
 
-  const reqSIP = (fv, cagr, y) => {
-    const i = cagr/100/12, n = y*12;
-    if (n<=0) return NaN;
-    if (Math.abs(i)<1e-12) return fv/n;
-    return fv * i / ((Math.pow(1+i,n)-1)*(1+i));
-  };
+  // Tabs
+  on('tabPlanner', 'click', () => { $('panePlanner').style.display = ''; $('paneGoal').style.display = 'none'; });
+  on('tabGoal', 'click', () => { $('panePlanner').style.display = 'none'; $('paneGoal').style.display = ''; });
 
-  const presets = {conservative:{lc:50,mc:30,sc:20}, balanced:{lc:45,mc:30,sc:25}, aggressive:{lc:35,mc:35,sc:30}};
-
-  const safeClick = (el, fn) => el && el.addEventListener('click', fn);
-
-  safeClick($('#tabPlanner'), () => { $('#panePlanner').style.display=''; $('#paneGoal').style.display='none'; });
-  safeClick($('#tabGoal'), () => { $('#panePlanner').style.display='none'; $('#paneGoal').style.display=''; });
-
-  const applyPreset = name => {
+  // Presets
+  function applyPreset(name) {
     const p = presets[name];
-    $('#lc').value = p.lc; $('#mc').value = p.mc; $('#sc').value = p.sc;
+    if (!p) return;
+    $('lc').value = p.lc; $('mc').value = p.mc; $('sc').value = p.sc;
     document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-    $(`preset${name.charAt(0).toUpperCase()+name.slice(1)}`)?.classList.add('active');
-    validateAlloc(); renderPlanner();
-  };
+    $(`preset${name.charAt(0).toUpperCase() + name.slice(1)}`)?.classList.add('active');
+    validateAlloc();
+    renderPlanner();
+  }
+  on('presetCons', 'click', () => applyPreset('conservative'));
+  on('presetBal', 'click', () => applyPreset('balanced'));
+  on('presetAgg', 'click', () => applyPreset('aggressive'));
 
-  safeClick($('#presetCons'), () => applyPreset('conservative'));
-  safeClick($('#presetBal'), () => applyPreset('balanced'));
-  safeClick($('#presetAgg'), () => applyPreset('aggressive'));
+  // Allocation validation
+  function validateAlloc() {
+    const lc = +($('lc')?.value || 0);
+    const mc = +($('mc')?.value || 0);
+    const sc = +($('sc')?.value || 0);
+    const sum = lc + mc + sc;
+    const warn = $('allocWarning');
+    if (!warn) return false;
+    if (sum !== 100) {
+      warn.innerHTML = `<span class="error">Must sum to 100% (current: ${sum}%)</span>`;
+      return false;
+    } else {
+      warn.innerHTML = '<span class="success">100% ✓</span>';
+      return true;
+    }
+  }
 
-  const validateAlloc = () => {
-    const sum = +$('#lc').value + +$('#mc').value + +$('#sc').value;
-    $('#allocWarning').innerHTML = sum===100 ? '<span class="success">100% ✓</span>' : `<span class="error">Must be 100% (now ${sum}%)</span>`;
-    return sum===100;
-  };
-  ['lc','mc','sc'].forEach(id => $(id)?.addEventListener('input', validateAlloc));
-
-  const getState = () => {
-    const inc = +$('#husband').value + +$('#wife').value;
-    const exp = +$('#house').value + +$('#emi').value + +$('#misc').value;
-    const actual = Math.max(0, inc-exp);
-    const investable = window._goalSIP ?? actual;
-    const lc = +$('#lc').value, mc = +$('#mc').value, sc = +$('#sc').value;
-    const y = +$('#years').value;
-    const sip = {lc:investable*lc/100, mc:investable*mc/100, sc:investable*sc/100};
-    const fv = {lc:fvSIP(sip.lc,+$('#lc_r').value,y), mc:fvSIP(sip.mc,+$('#mc_r').value,y), sc:fvSIP(sip.sc,+$('#sc_r').value,y)};
-    fv.total = fv.lc + fv.mc + fv.sc;
-    return {inc, exp, actual, investable, sip, fv, y};
-  };
-
-  let charts = {};
-  const renderCharts = (s, cmp) => {
-    if (charts.alloc) charts.alloc.destroy();
-    charts.alloc = new Chart($('#allocChart'), {type:'pie', data:{labels:['Large','Mid','Small'], datasets:[{data:[+$('#lc').value,+$('#mc').value,+$('#sc').value], backgroundColor:['#0b74de','#0a5fb2','#ff7a59']}]}, options:{plugins:{legend:{position:'bottom'}}}});
-
-    if (charts.fv) charts.fv.destroy();
-    charts.fv = new Chart($('#fvChart'), {type:'bar', data:{labels:['Large','Mid','Small'], datasets:[{data:[s.fv.lc,s.fv.mc,s.fv.sc], backgroundColor:['#0b74de','#0a5fb2','#ff7a59']}]}, options:{plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>fmt(c.raw)}}}}});
-
-    if (cmp) {
-      $('#compareChartContainer').innerHTML = '<canvas id="compareChart" height="220"></canvas>';
-      if (charts.cmp) charts.cmp.destroy();
-      charts.cmp = new Chart($('#compareChart'), {type:'bar', data:{labels:['Large','Mid','Small'], datasets:[
-        {label:'Current', data:[s.fv.lc,s.fv.mc,s.fv.sc], backgroundColor:'#0b74de'},
-        {label:'Comparison', data:[cmp.fv.lc,cmp.fv.mc,cmp.fv.sc], backgroundColor:'#ff7a59'}
-      ]}, options:{plugins:{legend:{position:'bottom'}}}});
-    } else $('#compareChartContainer').innerHTML = '';
-  };
-
-  const renderPlanner = () => {
-    if (!validateAlloc()) { $('#plannerResults').innerHTML = ''; return; }
-    const s = getState();
-    $('#plannerResults').innerHTML = `<div class="panel"><h3>Summary</h3>
-      <div class="small">Income: <strong>${fmt(s.inc)}</strong> | Expenses: <strong>${fmt(s.exp)}</strong></div>
-      <div class="small">Investable: <strong>${fmt(s.investable)}</strong> → Total SIP: <strong>${fmt(s.sip.lc+s.sip.mc+s.sip.sc)}</strong></div>
-      <div class="small">Projected corpus in ${s.y} yrs: <strong>${fmt(s.fv.total)}</strong></div></div>`;
-
-    // Auto-compare logic (kept simple)
-    const cur = {lc:+$('#lc').value, mc:+$('#mc').value, sc:+$('#sc').value};
-    const next = cur.lc > 47 ? 'balanced' : 'aggressive';
-    const cp = presets[next];
-    const cmpSIP = {lc:s.investable*cp.lc/100, mc:s.investable*cp.mc/100, sc:s.investable*cp.sc/100};
-    const cmpFV = {lc:fvSIP(cmpSIP.lc,+$('#lc_r').value,s.y), mc:fvSIP(cmpSIP.mc,+$('#mc_r').value,s.y), sc:fvSIP(cmpSIP.sc,+$('#sc_r').value,s.y)};
-    cmpFV.total = cmpFV.lc + cmpFV.mc + cmpFV.sc;
-    const delta = cmpFV.total - s.fv.total;
-
-    $('#compareCards').innerHTML = `
-      <div class="panel"><strong>Current</strong><div>${fmt(s.fv.total)}</div></div>
-      <div class="panel"><strong>${next.charAt(0).toUpperCase()+next.slice(1)}</strong><div>${fmt(cmpFV.total)}</div></div>
-      <div class="panel" style="background:#fff8ec"><strong>Delta</strong><div>${delta>0?'+' : ''}${fmt(delta)}</div></div>`;
-    renderCharts(s, cmpFV);
-  };
-
-  safeClick($('#calc'), renderPlanner);
-  safeClick($('#applyCompare'), () => $('#manualCompare').value && applyPreset($('#manualCompare').value));
-  safeClick($('#applyComparisonToPlanner'), () => $('#manualCompare').value && applyPreset($('#manualCompare').value));
-
-  safeClick($('#calcGoal'), () => {
-    const target = +$('#target').value, y = +$('#goalYears').value, cagr = +$('#goalCagr').value, infl = +$('#goalInfl').value;
-    const sip = reqSIP(target, cagr, y);
-    const real = target / Math.pow(1+infl/100, y);
-    const state = getState();
-    $('#goalResult').innerHTML = `<div class="small"><strong>Required SIP:</strong> ${fmt(sip)}</div>
-      <div class="small"><strong>Today’s value:</strong> ${fmt(real)}</div>
-      <div class="small"><strong>Status:</strong> ${state.actual >= sip ? '<span class="success">On track</span>' : '<span class="error">Short by '+fmt(sip-state.actual)+'</span>'}</div>`;
-    window._lastGoalSIP = sip;
+  // Attach input listeners safely
+  ['lc','mc','sc'].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('input', validateAlloc);
   });
 
-  safeClick($('#applyGoalToPlanner'), () => {
-    if (!window._lastGoalSIP) return alert('Calculate goal first');
-    window._goalSIP = window._lastGoalSIP;
-    $('#useActualIncome').style.display = '';
+  // Get current state
+  function getState() {
+    const husband = +($('husband')?.value || 0);
+    const wife = +($('wife')?.value || 0);
+    const house = +($('house')?.value || 0);
+    const emi = +($('emi')?.value || 0);
+    const misc = +($('misc')?.value || 0);
+    const income = husband + wife;
+    const expense = house + emi + misc;
+    const actualInvestable = Math.max(0, income - expense);
+    const investable = window._appliedGoalSIP ?? actualInvestable;
+
+    const lcPct = +($('lc')?.value || 0);
+    const mcPct = +($('mc')?.value || 0);
+    const scPct = +($('sc')?.value || 0);
+    const years = +($('years')?.value || 15);
+    const lcRate = +($('lc_r')?.value || 9);
+    const mcRate = +($('mc_r')?.value || 12);
+    const scRate = +($('sc_r')?.value || 16);
+
+    const sipLC = investable * lcPct / 100;
+    const sipMC = investable * mcPct / 100;
+    const sipSC = investable * scPct / 100;
+
+    const fvLC = fvSIP(sipLC, lcRate, years);
+    const fvMC = fvSIP(sipMC, mcRate, years);
+    const fvSC = fvSIP(sipSC, scRate, years);
+    const totalFV = fvLC + fvMC + fvSC;
+
+    return { income, expense, actualInvestable, investable, sipLC, sipMC, sipSC, fvLC, fvMC, fvSC, totalFV, years };
+  }
+
+  let charts = {};
+
+  function renderCharts(state, compareState) {
+    // Allocation pie
+    if (charts.alloc) charts.alloc.destroy();
+    charts.alloc = new Chart($('allocChart'), {
+      type: 'pie',
+      data: { labels: ['Large','Mid','Small'], datasets: [{ data: [+$('lc').value, +$('mc').value, +$('sc').value], backgroundColor: ['#0b74de','#0a5fb2','#ff7a59'] }] },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // FV bar
+    if (charts.fv) charts.fv.destroy();
+    charts.fv = new Chart($('fvChart'), {
+      type: 'bar',
+      data: { labels: ['Large','Mid','Small'], datasets: [{ data: [state.fvLC, state.fvMC, state.fvSC], backgroundColor: ['#0b74de','#0a5fb2','#ff7a59'] }] },
+      options: { plugins: { tooltip: { callbacks: { label: ctx => fmt(ctx.raw) } } } }
+    });
+
+    // Comparison
+    if (compareState) {
+      $('compareChartContainer').innerHTML = '<canvas id="compareChart" height="220"></canvas>';
+      if (charts.compare) charts.compare.destroy();
+      charts.compare = new Chart($('compareChart'), {
+        type: 'bar',
+        data: {
+          labels: ['Large','Mid','Small'],
+          datasets: [
+            { label: 'Current', data: [state.fvLC, state.fvMC, state.fvSC], backgroundColor: '#0b74de' },
+            { label: 'Compare', data: [compareState.fvLC, compareState.fvMC, compareState.fvSC], backgroundColor: '#ff7a59' }
+          ]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+      });
+    } else {
+      $('compareChartContainer').innerHTML = '';
+    }
+  }
+
+  function renderPlanner() {
+    if (!validateAlloc()) {
+      $('plannerResults').innerHTML = '<div class="panel error">Fix allocation to 100%</div>';
+      return;
+    }
+    const s = getState();
+
+    let html = `<div class="panel">
+      <h3 style="margin:0 0 8px">Summary</h3>
+      <div class="small">Income: <strong>${fmt(s.income)}</strong> | Expenses: <strong>${fmt(s.expense)}</strong></div>
+      <div class="small">Investable: <strong>${fmt(s.investable)}</strong></div>
+      <div class="small">Total SIP: <strong>${fmt(s.sipLC + s.sipMC + s.sipSC)}</strong></div>
+      <div class="small">Projected in ${s.years} yrs: <strong>${fmt(s.totalFV)}</strong></div>
+    </div>`;
+
+    $('plannerResults').innerHTML = html;
+
+    // Auto compare
+    const currentAlloc = +$('lc').value;
+    const suggested = currentAlloc > 47 ? 'aggressive' : 'balanced';
+    const p = presets[suggested];
+    const cmpInvestable = s.investable;
+    const cmpFV = {
+      fvLC: fvSIP(cmpInvestable * p.lc/100, +$('lc_r').value, s.years),
+      fvMC: fvSIP(cmpInvestable * p.mc/100, +$('mc_r').value, s.years),
+      fvSC: fvSIP(cmpInvestable * p.sc/100, +$('sc_r').value, s.years)
+    };
+    cmpFV.total = cmpFV.fvLC + cmpFV.fvMC + cmpFV.fvSC;
+
+    $('compareCards').innerHTML = `
+      <div class="panel"><strong>Current</strong><div>${fmt(s.totalFV)}</div></div>
+      <div class="panel"><strong>${suggested.charAt(0).toUpperCase()+suggested.slice(1)}</strong><div>${fmt(cmpFV.total)}</div></div>
+      <div class="panel" style="background:#fff8ec"><strong>Delta</strong><div>${fmt(cmpFV.total - s.totalFV)}</div></div>`;
+
+    renderCharts(s, cmpFV);
+  }
+
+  on('calc', 'click', renderPlanner);
+  on('applyCompare', 'click', () => {
+    const sel = $('manualCompare').value;
+    if (sel) applyPreset(sel);
+  });
+  on('applyComparisonToPlanner', 'click', () => {
+    const sel = $('manualCompare').value;
+    if (sel) applyPreset(sel);
+  });
+
+  on('calcGoal', 'click', () => {
+    const target = +$('target').value;
+    const years = +$('goalYears').value;
+    const cagr = +$('goalCagr').value;
+    const infl = +$('goalInfl').value;
+    const requiredSIP = reqSIP(target, cagr, years);
+    const todayValue = target / Math.pow(1 + infl/100, years);
+    const current = getState().actualInvestable;
+
+    $('goalResult').innerHTML = `
+      <div class="small"><strong>Required SIP:</strong> ${fmt(requiredSIP)}</div>
+      <div class="small"><strong>Today’s value of goal:</strong> ${fmt(todayValue)}</div>
+      <div class="small"><strong>You can afford:</strong> ${current >= requiredSIP ? '<span class="success">Yes!</span>' : '<span class="error">Short by '+fmt(requiredSIP - current)+'</span>'}</div>`;
+
+    window._lastGoalSIP = requiredSIP;
+  });
+
+  on('applyGoalToPlanner', 'click', () => {
+    if (!window._lastGoalSIP) return alert("Calculate goal first");
+    window._appliedGoalSIP = window._lastGoalSIP;
+    $('useActualIncome').style.display = '';
     renderPlanner();
   });
 
-  safeClick($('#useActualIncome'), () => { window._goalSIP = null; $('#useActualIncome').style.display = 'none'; renderPlanner(); });
-
-  safeClick($('#resetBtn'), () => {
-    const def = {husband:100000,wife:100000,house:60000,emi:20000,misc:20000,lc:45,mc:30,sc:25,lc_r:9,mc_r:12,sc_r:16,years:15,target:10000000,goalYears:15,goalCagr:12,goalInfl:5};
-    Object.keys(def).forEach(k => $(k) && ($(k).value = def[k]));
-    window._goalSIP = null; $('#useActualIncome').style.display = 'none';
-    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-    $('#presetBal').classList.add('active');
-    validateAlloc(); renderPlanner();
+  on('useActualIncome', 'click', () => {
+    window._appliedGoalSIP = null;
+    $('useActualIncome').style.display = 'none';
+    renderPlanner();
   });
 
-  safeClick($('#downloadBtn'), () => {
+  on('resetBtn', 'click', () => {
+    const defaults = {husband:100000,wife:100000,house:60000,emi:20000,misc:20000,lc:45,mc:30,sc:25,lc_r:9,mc_r:12,sc_r:16,years:15,target:10000000,goalYears:15,goalCagr:12,goalInfl:5};
+    Object.keys(defaults).forEach(k => { const el = $(k); if (el) el.value = defaults[k]; });
+    window._appliedGoalSIP = null;
+    $('useActualIncome').style.display = 'none';
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    $('presetBal').classList.add('active');
+    validateAlloc();
+    renderPlanner();
+  });
+
+  on('downloadBtn', 'click', () => {
     const s = getState();
-    const ws = XLSX.utils.aoa_to_sheet([["SIP Planner Results"],["Income",s.inc],["Expenses",s.exp],["Investable",s.investable],["",""],["Projected Corpus",s.fv.total]]);
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Plan");
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["SIP Planner Results"],[],
+      ["Income",s.income],["Expenses",s.expense],["Investable",s.investable],
+      [],["Large %", $('lc').value],["Mid %", $('mc').value],["Small %", $('sc').value],
+      [],["Projected Corpus", s.totalFV]
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Plan");
     XLSX.writeFile(wb, "SIP-Plan.xlsx");
   });
 
+  // Initial load
   validateAlloc();
-  setTimeout(renderPlanner, 200);
+  setTimeout(renderPlanner, 300);
 });
 </script>
 </body>

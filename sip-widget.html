@@ -9,15 +9,8 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
   :root{
-    --bg:#f8fffe;
-    --card:#ffffff;
-    --accent:#0d9488;
-    --accent2:#0f766e;
-    --text:#1e293b;
-    --muted:#64748b;
-    --success:#16a34a;
-    --danger:#dc2626;
-    --shadow:0 10px 30px rgba(0,0,0,0.08);
+    --bg:#f8fffe;--card:#ffffff;--accent:#0d9488;--accent2:#0f766e;--text:#1e293b;--muted:#64748b;
+    --success:#16a34a;--danger:#dc2626;--shadow:0 10px 30px rgba(0,0,0,0.08);
   }
   *{box-sizing:border-box}
   body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;padding:20px 16px;color:var(--text);line-height:1.6;background:linear-gradient(135deg,#f0fdfa 0%,#ccfbf1 100%)}
@@ -30,7 +23,6 @@
   label{display:block;font-size:14px;font-weight:600;margin-bottom:8px;color:var(--text)}
   input[type=number],select{width:100%;padding:14px;border-radius:12px;border:1px solid #94a3b8;font-size:16px;transition:border .2s}
   input:focus{border-color:var(--accent);outline:none}
-  .controls{display:flex;flex-wrap:wrap;gap:14px;margin-top:24px;align-items:center}
   .btn{padding:14px 28px;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:16px;transition:all .3s;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
   .btn.primary{background:var(--accent);color:#fff}
   .btn.primary:hover{background:var(--accent2);transform:translateY(-2px)}
@@ -42,7 +34,7 @@
   .muted{color:var(--muted);font-size:14px}
   .segmented{display:inline-flex;border-radius:14px;overflow:hidden;border:1px solid #94a3b8;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
   .segmented button{background:#fff;padding:12px 20px;cursor:pointer;font-weight:700;transition:all .3s;font-size:15px;color:var(--text)}
-  .segmented button.active{background:var(--accent);color:#fff;border:2px solid #065f46}
+  .segmented button.active{background:var(--accent);color:#fff}
   .radio-group{display:flex;gap:24px;margin:16px 0;flex-wrap:wrap}
   .radio-group label{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600}
   .whatsapp{position:fixed;right:20px;bottom:20px;background:#25D366;color:#fff;padding:18px 24px;border-radius:60px;display:flex;gap:12px;align-items:center;box-shadow:0 12px 30px rgba(37,211,102,0.4);text-decoration:none;font-weight:700;z-index:999;font-size:17px;animation:pulse 2s infinite}
@@ -61,6 +53,12 @@
   .risk-note{background:#fefce8;padding:20px;border-radius:16px;margin:20px 0;border-left:6px solid #f59e0b}
   .warning-box{background:#fef2f2;border:1px solid #fca5a5;padding:16px;border-radius:12px;color:#991b1b}
   .fd-comparison{background:#fef2f2;padding:20px;border-radius:16px;margin:20px 0;border-left:6px solid #dc2626}
+  .disclaimer{background:#f0fdfa;padding:16px;border-radius:12px;margin:20px 0;border:1px solid #99f6e4;font-size:14px;text-align:center}
+  .option-card{padding:20px;border-radius:16px;margin:12px 0;position:relative;overflow:hidden}
+  .option-card.safe{background:#ecfdf5;border:2px solid #86efac}
+  .option-card.balanced{background:#f0fdfa;border:3px solid #0d9488}
+  .option-card.accelerated{background:#f0fdf4;border:2px solid #16a34a;box-shadow:0 8px 25px rgba(22,163,74,0.2)}
+  .star{position:absolute;top:12px;right:12px;font-size:20px}
 </style>
 </head>
 <body>
@@ -82,13 +80,18 @@
     </div>
   </div>
 
+  <div class="disclaimer">
+    We use conservative historical returns (Large 9%, Mid 12%, Small 16%) — the lower end of what Indian equity has delivered over 20+ years. 
+    Actual returns have often been higher, especially in bull markets.
+  </div>
+
   <div class="card">
     <div style="display:flex;gap:12px;margin-bottom:20px">
       <button id="tabPlanner" class="btn primary" style="font-weight:700">Planner</button>
       <button id="tabGoal" class="btn ghost">Goal Planner</button>
     </div>
 
-    <!-- Planner -->
+    <!-- Planner Tab -->
     <div id="panePlanner">
       <div class="radio-group">
         <label><input type="radio" name="userType" value="single" checked> Single</label>
@@ -142,7 +145,7 @@
 
       <div class="risk-note">
         <strong>Why this allocation matters:</strong><br>
-        • <strong>Large Caps</strong> = Safety & stability (think HDFC Bank, Reliance)<br>
+        • <strong>Large Caps</strong> = Safety & stability<br>
         • <strong>Mid & Small Caps</strong> = Growth engine — in good years, small caps can deliver 30–50% returns<br>
         • Balanced portfolio gives you both: <strong>growth + peace of mind</strong>
       </div>
@@ -150,10 +153,6 @@
       <div class="controls">
         <div><label>Time Horizon</label>
           <select id="years">
-            <option value="3">3 years</option>
-            <option value="6">6 years</option>
-            <option value="9">9 years</option>
-            <option value="12">12 years</option>
             <option value="15" selected>15 years</option>
             <option value="18">18 years</option>
             <option value="21">21 years</option>
@@ -178,14 +177,12 @@
 
       <div id="goalOverrideBanner" class="goal-banner" style="display:none"></div>
 
-      <!-- Summary Bar -->
       <div id="summaryBar" class="summary-bar" style="display:none">
         <div><div class="muted">Total Monthly Income</div><div class="kpi" id="totalIncome">₹2 L</div></div>
         <div><div class="muted">Total Expenses</div><div class="kpi" id="totalExpense">₹60 K</div></div>
         <div><div class="muted">Your Monthly SIP</div><div class="kpi" id="monthlySIP">₹1.4 L</div></div>
       </div>
 
-      <!-- Money Story -->
       <div id="moneyStory" class="panel" style="display:none;padding:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
           <div style="text-align:center">
@@ -204,20 +201,17 @@
         </div>
       </div>
 
-      <!-- Combined Retirement Insight -->
       <div id="retirementInsight" class="age-insight" style="display:none">
         <strong>At age <span id="retireAge">48</span>, your corpus will be <span id="ageCorpus">₹9.8 Crore</span></strong><br>
         That’s enough for <strong id="passiveIncome">₹3.3 Lakh/month</strong> passive income (after inflation & taxes) for life.
       </div>
 
-      <!-- Dynamic FD vs Equity -->
       <div id="fdComparison" class="fd-comparison" style="display:none">
         <strong>FD vs Equity (after inflation & taxes):</strong><br>
         Same SIP in FD @ ~5% real return → <span id="fdCorpus">₹4.2 Cr</span><br>
         Equity @12% → <span id="equityCorpus">₹9.8 Cr</span> → <span class="danger">You’d leave <span id="fdLoss">₹5.6 Cr</span> on the table</span>
       </div>
 
-      <!-- Extra SIP Slider -->
       <div id="extraSIP" class="slider-container" style="display:none">
         <label style="font-size:18px;font-weight:700">What if you add just ₹5,000 more per month?</label>
         <input type="range" min="0" max="25000" value="5000" step="1000" id="extraSlider">
@@ -241,6 +235,9 @@
       <div class="panel">
         <h3>Compare Risk Profiles</h3>
         <div id="compareCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px"></div>
+        <div class="muted" style="margin-top:12px;font-size:13px;text-align:center">
+          *In strong bull markets: Large +5%, Mid +10%, Small +15% over base returns → 30–70% higher corpus possible
+        </div>
       </div>
 
       <div class="chart-panel">
@@ -249,12 +246,18 @@
       </div>
     </div>
 
-    <!-- Goal Planner -->
+    <!-- Goal Planner Tab -->
     <div id="paneGoal" style="display:none">
       <div class="grid">
         <div><label>Target Corpus (₹)</label><input id="target" type="number" value="100000000"></div>
         <div><label>Years to reach</label><input id="goalYears" type="number" value="18"></div>
         <div><label>Expected CAGR %</label><input id="goalCagr" type="number" value="12" step="0.5"></div>
+      </div>
+
+      <div id="goalIncomeSection" style="margin-top:20px;display:none">
+        <label>Your total monthly household income (approx)</label>
+        <input id="goalIncome" type="number" placeholder="150000" style="padding:14px;font-size:16px">
+        <div class="muted" style="font-size:13px;margin-top:8px">Used to show personalized insights</div>
       </div>
 
       <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap">
@@ -263,22 +266,10 @@
         <button id="useActualIncome" class="btn" style="display:none">Use actual income</button>
       </div>
 
-      <div id="goalResult" class="panel" style="margin-top:20px"></div>
-      <div id="goalInsights" style="display:none">
-        <div class="panel">
-          <h3>Your Goal Reality Check</h3>
-          <div class="grid">
-            <div class="highlight"><strong>Required SIP</strong><br><span style="font-size:28px" id="goalSIP">₹48,000/month</span></div>
-            <div class="highlight" style="background:#fef3c7"><strong>Delay Cost</strong><br>Every year delay → <span class="danger">+₹18,000/month extra needed</span></div>
-            <div class="highlight" style="background:#ecfdf5"><strong>Step-up Power</strong><br>10% annual increase → Required SIP drops to <strong id="stepupSIP">₹28,000 only</strong></div>
-          </div>
-          <div style="margin-top:16px;font-size:15px;color:#475569">
-            Small tweaks like starting early or increasing SIP yearly can help you reach your goal <strong>years ahead</strong> of schedule.
-          </div>
-        </div>
-        <div id="cagrWarning" class="warning-box" style="display:none">
-          <strong>Warning:</strong> Expected CAGR above 17% is very aggressive. It requires frequent rebalancing and carries substantial risk. Most balanced portfolios target 12–15%.
-        </div>
+      <div id="goalResult" class="panel" style="margin-top:20px;display:none"></div>
+      <div id="goalOptions" style="display:none"></div>
+      <div id="cagrWarning" class="warning-box" style="display:none;margin-top:20px">
+        <strong>Warning:</strong> Expected CAGR above 17% is very aggressive. Most balanced portfolios target 12–15%.
       </div>
     </div>
   </div>
@@ -310,35 +301,42 @@ document.addEventListener('DOMContentLoaded', () => {
     return fv * i / ((Math.pow(1+i,n)-1)*(1+i));
   };
 
-  const presets = {
-    conservative: {name:"Conservative", lc:50, mc:30, sc:20},
-    balanced:     {name:"Balanced",     lc:45, mc:30, sc:25},
-    aggressive:   {name:"Aggressive",   lc:35, mc:35, sc:30}
-  };
-
   let growthChart = null;
   let lastRequiredSIP = null;
   let currentTarget = null;
+  let userIncome = null;
 
-  const validateAlloc = () => {
-    const sum = (+$('lc').value || 0) + (+$('mc').value || 0) + (+$('sc').value || 0);
-    return sum === 100;
+  const saveIncome = () => {
+    if ($('singleInputs').style.display !== 'none') {
+      userIncome = +$('incomeSingle').value || 0;
+    } else {
+      userIncome = (+$('husband').value || 0) + (+$('wife').value || 0);
+    }
+    localStorage.setItem('sip_income', userIncome);
   };
+
+  const loadIncome = () => {
+    const saved = localStorage.getItem('sip_income');
+    if (saved) userIncome = +saved;
+    if ($('goalIncome')) $('goalIncome').value = userIncome || 150000;
+  };
+
+  loadIncome();
 
   const getAge = () => {
     if ($('singleInputs') && $('singleInputs').style.display !== 'none') return +$('ageSingle').value || 30;
-    const h = +$('ageHusband').value || 30;
-    const w = +$('ageWife').value || 30;
-    return Math.max(h, w);
+    return Math.max(+$('ageHusband').value || 30, +$('ageWife').value || 30);
   };
 
-  const getIncome = () => {
-    if ($('singleInputs') && $('singleInputs').style.display !== 'none') return +$('incomeSingle').value || 0;
-    return (+$('husband').value || 0) + (+$('wife').value || 0);
+  const getCurrentSurplus = () => {
+    const income = userIncome || 150000;
+    const expense = (+$('house').value || 0) + (+$('emi').value || 0) + (+$('misc').value || 0);
+    return Math.max(0, income - expense);
   };
 
   const getState = () => {
-    const income = getIncome();
+    saveIncome();
+    const income = userIncome || 150000;
     const expense = (+$('house').value || 0) + (+$('emi').value || 0) + (+$('misc').value || 0);
     const autoSIP = Math.max(0, income - expense);
     const manualSIP = +$('manualSIP').value || 0;
@@ -351,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
                fvSIP(sipAmount * alloc.mc/100, rates.mc, y) +
                fvSIP(sipAmount * alloc.sc/100, rates.sc, y);
 
-    const fdFV = fvSIP(sipAmount, 5, y); // ~5% real return after inflation & tax
+    const fdFV = fvSIP(sipAmount, 5, y);
 
     return {income, expense, sipAmount, autoSIP, y, rates, alloc, fv, fdFV, age: getAge()};
   };
@@ -373,20 +371,17 @@ document.addEventListener('DOMContentLoaded', () => {
     $('wealthCreated').textContent = fmt(wealth);
     $('multiplier').innerHTML = `That’s <strong>${multiplier}×</strong> your investment`;
 
-    // Retirement Insight
     const retireAge = s.age + s.y;
     $('retireAge').textContent = retireAge;
     $('ageCorpus').textContent = fmt(s.fv);
     $('passiveIncome').textContent = fmt(s.fv * 0.04 / 12);
     $('retirementInsight').style.display = 'block';
 
-    // FD Comparison
     $('fdCorpus').textContent = fmt(s.fdFV);
     $('equityCorpus').textContent = fmt(s.fv);
     $('fdLoss').textContent = fmt(s.fv - s.fdFV);
     $('fdComparison').style.display = 'block';
 
-    // Extra slider
     const extra = +$('extraSlider').value;
     const newSIP = s.sipAmount + extra;
     const newFV = fvSIP(newSIP * s.alloc.lc/100, s.rates.lc, s.y) +
@@ -396,27 +391,34 @@ document.addEventListener('DOMContentLoaded', () => {
     $('newCorpus').textContent = fmt(newFV);
     $('gainAmount').textContent = fmt(newFV - s.fv);
 
-    // Emergency
     const needed = s.expense * 9;
     $('emergencyStatus').innerHTML = s.sipAmount * 12 * 3 >= needed ?
       '<span style="color:#16a34a">Emergency fund building fast</span>' :
       '<span style="color:#dc2626">Build 6–12 months expenses first</span>';
 
-    // Compare cards
     let cards = '';
-    Object.entries(presets).forEach(([key, p]) => {
+    const profiles = [
+      {name:"Conservative", lc:50, mc:30, sc:20},
+      {name:"Balanced", lc:45, mc:30, sc:25},
+      {name:"Aggressive", lc:35, mc:35, sc:30}
+    ];
+    profiles.forEach(p => {
       const fvTotal = fvSIP(s.sipAmount * p.lc/100, s.rates.lc, s.y) +
                       fvSIP(s.sipAmount * p.mc/100, s.rates.mc, s.y) +
                       fvSIP(s.sipAmount * p.sc/100, s.rates.sc, s.y);
       const active = p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc;
-      cards += `<div class="panel" style="border:${active?'5px solid #0d9488':'1px solid #e2e8f0'};transform:${active?'scale(1.05)':''}">
+      const bullFV = fvSIP(s.sipAmount * p.lc/100, s.rates.lc+5, s.y) +
+                     fvSIP(s.sipAmount * p.mc/100, s.rates.mc+10, s.y) +
+                     fvSIP(s.sipAmount * p.sc/100, s.rates.sc+15, s.y);
+      cards += `<div class="panel" style="border:${active?'5px solid #0d9488':'1px solid #e2e8f0'}">
         <strong>${p.name}</strong><br><small>L:${p.lc}% M:${p.mc}% S:${p.sc}%</small><br>
         <div class="kpi">${fmt(fvTotal)}</div>
+        <div class="muted" style="font-size:13px;margin-top:8px">*Bull market upside: ${fmt(bullFV)}</div>
       </div>`;
     });
     $('compareCards').innerHTML = cards;
 
-    $('selectedProfile').innerHTML = `You selected: <strong>${Object.values(presets).find(p => p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc)?.name || 'Custom'}</strong>`;
+    $('selectedProfile').innerHTML = `You selected: <strong>${profiles.find(p => p.lc === s.alloc.lc && p.mc === s.alloc.mc && p.sc === s.alloc.sc)?.name || 'Custom'}</strong>`;
 
     if (growthChart) growthChart.destroy();
     const labels = Array.from({length: s.y + 1}, (_, i) => i === 0 ? 'Now' : `Year ${i}`);
@@ -440,6 +442,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const validateAlloc = () => {
+    const sum = (+$('lc').value || 0) + (+$('mc').value || 0) + (+$('sc').value || 0);
+    return sum === 100;
+  };
+
   const resetAll = () => {
     $('ageSingle').value = 30; $('incomeSingle').value = 150000;
     $('ageHusband').value = 30; $('ageWife').value = 30;
@@ -458,7 +465,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
   };
 
-  // Events
   document.querySelectorAll('input[name="userType"]').forEach(r => r.addEventListener('change', () => {
     const isCouple = r.value === 'couple';
     $('singleInputs').style.display = isCouple ? 'none' : 'block';
@@ -468,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('extraSlider').addEventListener('input', renderAll);
 
   const applyPreset = name => {
-    const p = presets[name];
+    const p = {conservative:{lc:50,mc:30,sc:20}, balanced:{lc:45,mc:30,sc:25}, aggressive:{lc:35,mc:35,sc:30}}[name];
     $('lc').value = p.lc; $('mc').value = p.mc; $('sc').value = p.sc;
     document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
     $(`preset${name.charAt(0).toUpperCase() + name.slice(1)}`).classList.add('active');
@@ -480,24 +486,84 @@ document.addEventListener('DOMContentLoaded', () => {
   $('presetAggressive').onclick = () => applyPreset('aggressive');
 
   $('calc').onclick = renderAll;
+  $('resetBtn').onclick = resetAll;
+
+  // Goal Planner Logic
+  if ($('goalIncome')) {
+    $('goalIncome').addEventListener('input', () => {
+      userIncome = +$('goalIncome').value || 150000;
+      localStorage.setItem('sip_income', userIncome);
+    });
+  }
 
   $('calcGoal').onclick = () => {
-    const target = +$('target').value || 0;
-    const y = +$('goalYears').value || 15;
+    const target = +$('target').value || 100000000;
+    const y = +$('goalYears').value || 18;
     const cagr = +$('goalCagr').value || 12;
-    const required = Math.round(reqSIP(target, cagr, y));
-    const stepupSIP = Math.round(reqSIP(target, cagr + 3, y) * 0.6);
+    const income = userIncome || +$('goalIncome')?.value || 150000;
 
-    $('goalSIP').textContent = fmt(required);
-    $('stepupSIP').textContent = fmt(stepupSIP);
-    $('goalResult').innerHTML = `<div style="font-size:28px;font-weight:900;text-align:center">Required SIP: ${fmt(required)}/month</div>`;
-    $('goalInsights').style.display = 'block';
-
-    if (cagr > 17) {
-      $('cagrWarning').style.display = 'block';
-    } else {
-      $('cagrWarning').style.display = 'none';
+    if (!income || income < 50000) {
+      $('goalIncomeSection').style.display = 'block';
+      return;
     }
+
+    const required = Math.round(reqSIP(target, cagr, y));
+    const min20 = Math.round(income * 0.2);
+    const accelerated = Math.round(required * 1.25);
+
+    const fv20 = fvSIP(min20, 11.8, y);
+    const fvReq = fvSIP(required, 12.3, y);
+    const fvAcc = fvSIP(accelerated, 13.1, y);
+
+    const bull20 = fvSIP(min20, 14, y);
+    const bullReq = fvSIP(required, 15, y);
+    const bullAcc = fvSIP(accelerated, 17, y);
+
+    $('goalResult').innerHTML = `
+      <div style="text-align:center;padding:20px">
+        <div class="muted">Required Monthly SIP</div>
+        <div class="big" style="font-size:56px;color:var(--accent)">${fmt(required)}</div>
+        <div style="margin:20px 0">
+          <span class="muted">to achieve</span> 
+          <strong style="font-size:28px">${fmt(target)}</strong> 
+          <span class="muted">in ${y} years</span>
+        </div>
+      </div>
+    `;
+
+    $('goalOptions').innerHTML = `
+      <div class="option-card safe">
+        <strong>Safe & Steady</strong><br>
+        Invest ${fmt(min20)}/month (20% of income) → ${fmt(fv20)} comfortably
+        <div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bull20)}</div>
+      </div>
+      <div class="option-card balanced">
+        <strong>Balanced Growth</strong><br>
+        Invest ${fmt(required)}/month → Hit ${fmt(target)} exactly
+        <div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bullReq)}</div>
+      </div>
+      <div class="option-card accelerated">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <strong>Accelerated Path</strong> <span class="star">★</span><br>
+            Invest ${fmt(accelerated)}/month → ${fmt(target)} in ${Math.round(y*0.83)} years<br>
+            or ${fmt(fvAcc)} in ${y} years
+          </div>
+        </div>
+        <div class="muted" style="font-size:13px;margin-top:8px">*In bull markets: up to ${fmt(bullAcc)}</div>
+      </div>
+      <div style="margin-top:20px;padding:16px;background:#f0fdfa;border-radius:12px;text-align:center;font-size:15px">
+        Many of our clients start with Option 2 and gradually move to Option 3 as confidence grows.<br>
+        Small allocation changes can add ₹4–10 Cr over time.<br>
+        Happy to help you choose the perfect mix — just say hi on WhatsApp.
+      </div>
+    `;
+
+    if (cagr > 17) $('cagrWarning').style.display = 'block';
+    else $('cagrWarning').style.display = 'none';
+
+    $('goalResult').style.display = 'block';
+    $('goalOptions').style.display = 'block';
 
     lastRequiredSIP = required;
     currentTarget = target;
@@ -511,8 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   $('useActualIncome').onclick = () => {
-    lastRequiredSIP = null;
-    currentTarget = null;
+    lastRequiredSIP = null; currentTarget = null;
     $('useActualIncome').style.display = 'none';
     $('goalOverrideBanner').style.display = 'none';
     renderAll();
@@ -520,8 +585,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('tabPlanner').onclick = () => { $('panePlanner').style.display = ''; $('paneGoal').style.display = 'none'; $('tabPlanner').className = 'btn primary'; $('tabGoal').className = 'btn ghost'; };
   $('tabGoal').onclick = () => { $('panePlanner').style.display = 'none'; $('paneGoal').style.display = ''; $('tabPlanner').className = 'btn ghost'; $('tabGoal').className = 'btn primary'; };
-
-  $('resetBtn').onclick = resetAll;
 
   setTimeout(renderAll, 400);
 });

@@ -369,20 +369,39 @@ document.addEventListener('DOMContentLoaded', function () {
         options: { plugins: { legend: { position: 'bottom' } } }
       });
 
-      // fv bar
-      var fCtx = $('fvChart').getContext('2d');
-      if (fvChart) fvChart.destroy();
-      fvChart = new Chart(fCtx, {
-        type: 'bar',
-        data: {
-          labels: ['Large', 'Mid', 'Small'],
-          datasets: [{ label: 'Projected FV', data: [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc], backgroundColor: ['#0b74de', '#0a5fb2', '#ff7a59'] }]
-        },
-        options: {
-          plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { return formatIndian(ctx.raw, false); } } } },
-          scales: { y: { ticks: { callback: function (v) { return (v >= 100000 ? (v / 100000).toFixed(1) + 'L' : v); } } }
+// fv bar
+var fCtx = $id('fvChart').getContext('2d');
+if (fvChart) fvChart.destroy();
+fvChart = new Chart(fCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Large', 'Mid', 'Small'],
+    datasets: [{
+      label: 'Projected FV',
+      data: [state.outputs.fv_lc, state.outputs.fv_mc, state.outputs.fv_sc],
+      backgroundColor: ['#0b74de', '#0a5fb2', '#ff7a59']
+    }]
+  },
+  options: {
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function(ctx) { return indianFormat(ctx.raw); }
         }
-      });
+      }
+    },
+    scales: {
+      y: {
+        ticks: {
+          callback: function(v) {
+            return v >= 100000 ? (v / 100000).toFixed(1) + 'L' : v;
+          }
+        }
+      }
+    }
+  }
+});
 
       // compare chart
       if (compareState) {

@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Simple SIP Planner</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;padding:18px;background:#f7f9fb}
+  .card{max-width:900px;margin:0 auto;border:1px solid #e3e3e3;padding:18px;border-radius:8px;background:#fff}
+  label{font-size:13px;color:#333}
+  input, select{padding:8px;width:100%;box-sizing:border-box;margin-top:6px}
+  button{padding:10px 14px;background:#0b74de;color:white;border:none;border-radius:6px;cursor:pointer}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .result{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h3 style="margin-top:0">Simple SIP Planner</h3>
+  <div class="grid">
+    <div><label>Husband monthly income (₹)</label><input id="husband" type="number" value="100000"></div>
+    <div><label>Wife monthly income (₹)</label><input id="wife" type="number" value="100000"></div>
+    <div><label>Household expenses (₹)</label><input id="house" type="number" value="60000"></div>
+    <div><label>EMI (₹)</label><input id="emi" type="number" value="20000"></div>
+    <div><label>Misc expenses (₹)</label><input id="misc" type="number" value="20000"></div>
+  </div>
+
+  <hr>
+
+  <h4>Allocation (percent)</h4>
+  <div class="grid">
+    <div><label>Large cap %</label><input id="lc" type="number" value="40"></div>
+    <div><label>Mid cap %</label><input id="mc" type="number" value="30"></div>
+    <div><label>Small cap %</label><input id="sc" type="number" value="20"></div>
+    <div><label>Bullions (Gold) %</label><input id="gold" type="number" value="10"></div>
+  </div>
+
+  <hr>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    <div style="min-width:160px">
+      <label>Projection years</label>
+      <select id="years"><option>10</option><option>20</option><option>15</option><option>5</option></select>
+    </div>
+    <div style="min-width:160px"><label>Large cap CAGR %</label><input id="lc_r" type="number" value="11"></div>
+    <div style="min-width:160px"><label>Mid cap CAGR %</label><input id="mc_r" type="number" value="13"></div>
+    <div style="min-width:160px"><label>Small cap CAGR %</label><input id="sc_r" type="number" value="15"></div>
+    <div style="min-width:160px"><label>Gold CAGR %</label><input id="gold_r" type="number" value="7"></div>
+    <div style="align-self:end"><button id="calc">Calculate</button></div>
+  </div>
+
+  <div id="result" class="result"></div>
+  <p style="margin-top:12px;font-size:13px;color:#666">Tip: change numbers and click Calculate. Values shown in Indian format.</p>
+</div>
+
+<script>
+(function(){
+  function indianFormat(x){
+    if(x === null || x === undefined || isNaN(x)) return "-";
+    x = Math.round(x);
+    if(x >= 10000000) return (x/10000000).toFixed(2) + " Cr";
+    if(x >= 100000) return (x/100000).toFixed(2) + " L";
+    return x.toLocaleString('en-IN');
+  }
+  function fv_sip(monthly, annualRate, years){
+    if(monthly <= 0) return 0;
+    var r = annualRate/100/12;
+    var n = years*12;
+    if(r <= 0) return monthly * n;
+    return monthly * ( (Math.pow(1+r, n) - 1) / r ) * (1 + r);
+  }
+  function render(){
+    var husband = Number(document.getElementById('husband').value||0);
+    var wife = Number(document.getElementById('wife').value||0);
+    var house = Number(document.getElementById('house').value||0);
+    var emi = Number(document.getElementById('emi').value||0);
+    var misc = Number(document.getElementById('misc').value||0);
+    var totalIncome = husband + wife;
+    var totalExpenses = house + emi + misc;
+    var monthlySavings = totalIncome - totalExpenses;
+    var investable = Math.max(0, monthlySavings);
+    var lc = Number(document.getElementById('lc').value||0);
+    var mc = Number(document.getElementById('mc').value||0);
+    var sc = Number(document.getElementById('sc').value||0);
+    var gold = Number(document.getElementById('gold').value||0);
+    var years = Number(document.getElementById('years').value||10);
+    var lc_r = Number(document.getElementById('lc_r').value||0);
+    var mc_r = Number(document.getElementById('mc_r').value||0);
+    var sc_r = Number(document.getElementById('sc_r').value||0);
+    var gold_r = Number(document.getElementById('gold_r').value||0);
+    var lc_sip = investable * (lc/100);
+    var mc_sip = investable * (mc/100);
+    var sc_sip = investable * (sc/100);
+    var gold_sip = investable * (gold/100);
+    var total_sip = lc_sip + mc_sip + sc_sip + gold_sip;
+    var fv_lc = fv_sip(lc_sip, lc_r, years);
+    var fv_mc = fv_sip(mc_sip, mc_r, years);
+    var fv_sc = fv_sip(sc_sip, sc_r, years);
+    var fv_gold = fv_sip(gold_sip, gold_r, years);
+    var fv_total = fv_lc + fv_mc + fv_sc + fv_gold;
+    var allocTotal = lc + mc + sc + gold;
+    var html = '';
+    html += '<div style="background:#fbfbfb;padding:12px;border-radius:8px"><strong>Summary</strong><br>';
+    html += 'Total income: <b>' + indianFormat(totalIncome) + '</b><br>';
+    html += 'Total expenses: <b>' + indianFormat(totalExpenses) + '</b><br>';
+    html += 'Investable per month: <b>' + indianFormat(investable) + '</b><br>';
+    html += 'Allocation check: <b>' + allocTotal + '%</b> ' + (allocTotal===100 ? '✔️' : '<span style="color:#c00">⚠️ (must total 100%)</span>') + '<br></div>';
+    html += '<div style="background:#fff8e6;padding:12px;border-radius:8px"><strong>Monthly SIP split</strong><br>';
+    html += 'Large cap: ' + indianFormat(lc_sip) + '<br>';
+    html += 'Mid cap: ' + indianFormat(mc_sip) + '<br>';
+    html += 'Small cap: ' + indianFormat(sc_sip) + '<br>';
+    html += 'Gold: ' + indianFormat(gold_sip) + '<br><hr>Total SIP monthly: <b>' + indianFormat(total_sip) + '</b><br></div>';
+    html += '<div style="background:#eef9ff;padding:12px;border-radius:8px"><strong>Projection over ' + years + ' years</strong><br>';
+    html += 'Large cap FV: <b>' + indianFormat(fv_lc) + '</b> (at ' + lc_r + '% pa)<br>';
+    html += 'Mid cap FV: <b>' + indianFormat(fv_mc) + '</b> (at ' + mc_r + '% pa)<br>';
+    html += 'Small cap FV: <b>' + indianFormat(fv_sc) + '</b> (at ' + sc_r + '% pa)<br>';
+    html += 'Gold FV: <b>' + indianFormat(fv_gold) + '</b> (at ' + gold_r + '% pa)<br><hr>';
+    html += '<strong>Total projected corpus: ' + indianFormat(fv_total) + '</strong><br></div>';
+    document.getElementById('result').innerHTML = html;
+  }
+  document.getElementById('calc').addEventListener('click', render);
+  render();
+})();
+</script>
+</body>
+</html>

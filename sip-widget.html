@@ -377,7 +377,7 @@ var presets = {
               labels:['Large','Mid','Small','Gold'],
               datasets:[{label:'Projected FV (₹)', data:fvData, backgroundColor:['#0b74de','#0a5fb2','#ff7a59','#ffd166']}]
             },
-            options:{scales:{y:{ticks:{callback:function(v){ return v>=100000? (v/100000).toFixed(1)+'L': v }}} , plugins:{legend:{display:false}}}
+            options: { scales: { y: { ticks: { callback: function(v) { return v >= 100000 ? (v/100000).toFixed(1)+'L' : v; } } } }, plugins: { legend: { display: false } } }
           });
         }
 

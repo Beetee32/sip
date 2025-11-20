@@ -1,75 +1,213 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Simple SIP Planner</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Simple SIP Planner — Interactive</title>
+
+<!-- SheetJS for Excel export -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <style>
-  body{font-family:Arial,Helvetica,sans-serif;padding:18px;background:#f7f9fb}
-  .card{max-width:900px;margin:0 auto;border:1px solid #e3e3e3;padding:18px;border-radius:8px;background:#fff}
-  label{font-size:13px;color:#333}
-  input, select{padding:8px;width:100%;box-sizing:border-box;margin-top:6px}
-  button{padding:10px 14px;background:#0b74de;color:white;border:none;border-radius:6px;cursor:pointer}
+  :root{
+    --bg:#f4f7fb; --card:#fff; --accent:#0b74de; --accent-2:#0a5fb2;
+    --muted:#6b7280; --success:#16a34a; --danger:#dc2626;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);margin:0;padding:28px;color:#0f172a}
+  .wrap{max-width:1100px;margin:0 auto}
+  .header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  h1{font-size:20px;margin:0}
+  .sub{color:var(--muted);font-size:13px}
+  .card{background:var(--card);border-radius:14px;box-shadow:0 8px 30px rgba(11,16,30,0.06);padding:20px}
+  .tabs{display:flex;gap:8px;margin-bottom:16px}
+  .tab{padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600;color:var(--accent-2);background:transparent;border:1px solid transparent}
+  .tab.active{background:linear-gradient(180deg,var(--accent) 0%,var(--accent-2) 100%);color:white;box-shadow:0 6px 18px rgba(11,116,222,0.14)}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-  .result{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  label{display:block;font-size:13px;color:#111;margin-bottom:6px}
+  input[type=number], select, input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px}
+  .controls{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .btn{padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+  .btn.primary{background:var(--accent);color:white}
+  .btn.ghost{background:transparent;border:1px solid #e6e9ef}
+  .panel{background:#fbfdff;border-radius:10px;padding:14px;border:1px solid #eef3fb}
+  .muted{color:var(--muted);font-size:13px}
+  .result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px}
+  .small{font-size:13px;color:#111}
+  .kpi{font-size:16px;font-weight:700}
+  .accent-text{color:var(--accent-2);font-weight:700}
+  footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
+
+  /* small */
+  @media (max-width:600px){
+    .header{flex-direction:column;align-items:flex-start;gap:6px}
+    .controls{flex-direction:column;align-items:stretch}
+  }
 </style>
 </head>
 <body>
-<div class="card">
-  <h3 style="margin-top:0">Simple SIP Planner</h3>
-  <div class="grid">
-    <div><label>Husband monthly income (₹)</label><input id="husband" type="number" value="100000"></div>
-    <div><label>Wife monthly income (₹)</label><input id="wife" type="number" value="100000"></div>
-    <div><label>Household expenses (₹)</label><input id="house" type="number" value="60000"></div>
-    <div><label>EMI (₹)</label><input id="emi" type="number" value="20000"></div>
-    <div><label>Misc expenses (₹)</label><input id="misc" type="number" value="20000"></div>
-  </div>
-
-  <hr>
-
-  <h4>Allocation (percent)</h4>
-  <div class="grid">
-    <div><label>Large cap %</label><input id="lc" type="number" value="40"></div>
-    <div><label>Mid cap %</label><input id="mc" type="number" value="30"></div>
-    <div><label>Small cap %</label><input id="sc" type="number" value="20"></div>
-    <div><label>Bullions (Gold) %</label><input id="gold" type="number" value="10"></div>
-  </div>
-
-  <hr>
-
-  <div style="display:flex;gap:12px;flex-wrap:wrap">
-    <div style="min-width:160px">
-      <label>Projection years</label>
-      <select id="years"><option>10</option><option>20</option><option>15</option><option>5</option></select>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>Simple SIP Planner</h1>
+        <div class="sub">Interactive planner with allocation, projections and goal calculator. Download your results as Excel.</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="downloadBtn" class="btn primary" title="Download results as Excel">Download Excel</button>
+        <button id="resetBtn" class="btn ghost" title="Reset to defaults">Reset</button>
+      </div>
     </div>
-    <div style="min-width:160px"><label>Large cap CAGR %</label><input id="lc_r" type="number" value="11"></div>
-    <div style="min-width:160px"><label>Mid cap CAGR %</label><input id="mc_r" type="number" value="13"></div>
-    <div style="min-width:160px"><label>Small cap CAGR %</label><input id="sc_r" type="number" value="15"></div>
-    <div style="min-width:160px"><label>Gold CAGR %</label><input id="gold_r" type="number" value="7"></div>
-    <div style="align-self:end"><button id="calc">Calculate</button></div>
-  </div>
 
-  <div id="result" class="result"></div>
-  <p style="margin-top:12px;font-size:13px;color:#666">Tip: change numbers and click Calculate. Values shown in Indian format.</p>
-</div>
+    <div class="card">
+
+      <div class="tabs" role="tablist" aria-label="Planner tabs">
+        <div id="tabPlanner" class="tab active" role="tab" aria-selected="true">Planner</div>
+        <div id="tabGoal" class="tab" role="tab" aria-selected="false">Goal Planner</div>
+      </div>
+
+      <!-- Planner tab -->
+      <div id="panePlanner" class="pane">
+        <div class="grid">
+          <div>
+            <label for="husband">Husband monthly income (₹)</label>
+            <input id="husband" type="number" value="100000" min="0" />
+          </div>
+          <div>
+            <label for="wife">Wife monthly income (₹)</label>
+            <input id="wife" type="number" value="100000" min="0" />
+          </div>
+          <div>
+            <label for="house">Household expenses (₹)</label>
+            <input id="house" type="number" value="60000" min="0" />
+          </div>
+          <div>
+            <label for="emi">EMI (₹)</label>
+            <input id="emi" type="number" value="20000" min="0" />
+          </div>
+          <div>
+            <label for="misc">Misc expenses (₹)</label>
+            <input id="misc" type="number" value="20000" min="0" />
+          </div>
+        </div>
+
+        <hr style="margin:16px 0;border:none;border-top:1px solid #eef3fb">
+
+        <h3 style="margin:8px 0 6px">Allocation (percent)</h3>
+        <div class="grid">
+          <div><label for="lc">Large cap %</label><input id="lc" type="number" value="40" min="0" max="100"/></div>
+          <div><label for="mc">Mid cap %</label><input id="mc" type="number" value="30" min="0" max="100"/></div>
+          <div><label for="sc">Small cap %</label><input id="sc" type="number" value="20" min="0" max="100"/></div>
+          <div><label for="gold">Bullions (Gold) %</label><input id="gold" type="number" value="10" min="0" max="100"/></div>
+        </div>
+
+        <div class="controls">
+          <div style="min-width:160px">
+            <label for="years">Projection years</label>
+            <select id="years"><option>10</option><option>15</option><option>20</option><option>5</option></select>
+          </div>
+          <div style="min-width:120px"><label for="lc_r">Large cap CAGR %</label><input id="lc_r" type="number" value="11" /></div>
+          <div style="min-width:120px"><label for="mc_r">Mid cap CAGR %</label><input id="mc_r" type="number" value="13" /></div>
+          <div style="min-width:120px"><label for="sc_r">Small cap CAGR %</label><input id="sc_r" type="number" value="15" /></div>
+          <div style="min-width:120px"><label for="gold_r">Gold CAGR %</label><input id="gold_r" type="number" value="7" /></div>
+          <div style="margin-left:auto"><button id="calc" class="btn primary">Calculate</button></div>
+        </div>
+
+        <div id="plannerResults" class="result-grid" aria-live="polite"></div>
+      </div>
+
+      <!-- Goal Planner tab -->
+      <div id="paneGoal" class="pane" style="display:none">
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="min-width:200px">
+            <label for="target">Target Corpus (₹)</label>
+            <input id="target" type="number" value="10000000" min="0" />
+          </div>
+          <div style="min-width:120px">
+            <label for="goalYears">Years to reach</label>
+            <input id="goalYears" type="number" value="15" min="1" />
+          </div>
+          <div style="min-width:120px">
+            <label for="goalCagr">Expected CAGR %</label>
+            <input id="goalCagr" type="number" value="12" />
+          </div>
+          <div style="min-width:120px">
+            <label for="goalInfl">Inflation % (annual)</label>
+            <input id="goalInfl" type="number" value="5" />
+          </div>
+          <div style="align-self:end">
+            <button id="calcGoal" class="btn primary">Calculate Goal SIP</button>
+          </div>
+        </div>
+
+        <div id="goalResult" style="margin-top:14px" aria-live="polite"></div>
+
+        <div class="muted" style="margin-top:10px">Formula used: required monthly SIP = FV * r / [ ((1+r)^n − 1) * (1+r) ] where r = monthly rate and n = months.</div>
+      </div>
+
+    </div>
+
+    <footer>Tip: click Download Excel to save your inputs and results locally. Everything runs in your browser.</footer>
+  </div>
 
 <script>
 (function(){
+  'use strict';
+
+  /* ---------- helpers ---------- */
   function indianFormat(x){
     if(x === null || x === undefined || isNaN(x)) return "-";
-    x = Math.round(x);
+    x = Math.round(Number(x));
     if(x >= 10000000) return (x/10000000).toFixed(2) + " Cr";
     if(x >= 100000) return (x/100000).toFixed(2) + " L";
     return x.toLocaleString('en-IN');
   }
+
   function fv_sip(monthly, annualRate, years){
+    monthly = Number(monthly) || 0;
+    annualRate = Number(annualRate) || 0;
+    years = Number(years) || 0;
     if(monthly <= 0) return 0;
     var r = annualRate/100/12;
     var n = years*12;
-    if(r <= 0) return monthly * n;
+    if(Math.abs(r) < 1e-12) return monthly * n;
     return monthly * ( (Math.pow(1+r, n) - 1) / r ) * (1 + r);
   }
-  function render(){
+
+  function required_sip_for_target(FV, annualCagr, years){
+    FV = Number(FV) || 0;
+    var r = (Number(annualCagr) || 0)/100/12;
+    var n = Number(years) * 12;
+    if(n <= 0) return NaN;
+    if(Math.abs(r) < 1e-12){
+      return FV / n;
+    }
+    return FV * r / ( (Math.pow(1+r, n) - 1) * (1 + r) );
+  }
+
+  /* ---------- tab logic ---------- */
+  var tabPlanner = document.getElementById('tabPlanner');
+  var tabGoal = document.getElementById('tabGoal');
+  var panePlanner = document.getElementById('panePlanner');
+  var paneGoal = document.getElementById('paneGoal');
+
+  function activateTab(tabName){
+    if(tabName === 'planner'){
+      tabPlanner.classList.add('active'); tabPlanner.setAttribute('aria-selected','true');
+      tabGoal.classList.remove('active'); tabGoal.setAttribute('aria-selected','false');
+      panePlanner.style.display = ''; paneGoal.style.display = 'none';
+    } else {
+      tabGoal.classList.add('active'); tabGoal.setAttribute('aria-selected','true');
+      tabPlanner.classList.remove('active'); tabPlanner.setAttribute('aria-selected','false');
+      panePlanner.style.display = 'none'; paneGoal.style.display = '';
+    }
+  }
+  tabPlanner.addEventListener('click', function(){ activateTab('planner'); });
+  tabGoal.addEventListener('click', function(){ activateTab('goal'); });
+
+  /* ---------- planner calculations ---------- */
+  var calcBtn = document.getElementById('calc');
+  function renderPlanner(){
+    // inputs
     var husband = Number(document.getElementById('husband').value||0);
     var wife = Number(document.getElementById('wife').value||0);
     var house = Number(document.getElementById('house').value||0);
@@ -77,50 +215,204 @@
     var misc = Number(document.getElementById('misc').value||0);
     var totalIncome = husband + wife;
     var totalExpenses = house + emi + misc;
-    var monthlySavings = totalIncome - totalExpenses;
-    var investable = Math.max(0, monthlySavings);
+    var investable = Math.max(0, totalIncome - totalExpenses);
+
     var lc = Number(document.getElementById('lc').value||0);
     var mc = Number(document.getElementById('mc').value||0);
     var sc = Number(document.getElementById('sc').value||0);
     var gold = Number(document.getElementById('gold').value||0);
+    var allocTotal = lc + mc + sc + gold;
+
     var years = Number(document.getElementById('years').value||10);
     var lc_r = Number(document.getElementById('lc_r').value||0);
     var mc_r = Number(document.getElementById('mc_r').value||0);
     var sc_r = Number(document.getElementById('sc_r').value||0);
     var gold_r = Number(document.getElementById('gold_r').value||0);
+
     var lc_sip = investable * (lc/100);
     var mc_sip = investable * (mc/100);
     var sc_sip = investable * (sc/100);
     var gold_sip = investable * (gold/100);
     var total_sip = lc_sip + mc_sip + sc_sip + gold_sip;
+
     var fv_lc = fv_sip(lc_sip, lc_r, years);
     var fv_mc = fv_sip(mc_sip, mc_r, years);
     var fv_sc = fv_sip(sc_sip, sc_r, years);
     var fv_gold = fv_sip(gold_sip, gold_r, years);
     var fv_total = fv_lc + fv_mc + fv_sc + fv_gold;
-    var allocTotal = lc + mc + sc + gold;
+
+    var container = document.getElementById('plannerResults');
     var html = '';
-    html += '<div style="background:#fbfbfb;padding:12px;border-radius:8px"><strong>Summary</strong><br>';
-    html += 'Total income: <b>' + indianFormat(totalIncome) + '</b><br>';
-    html += 'Total expenses: <b>' + indianFormat(totalExpenses) + '</b><br>';
-    html += 'Investable per month: <b>' + indianFormat(investable) + '</b><br>';
-    html += 'Allocation check: <b>' + allocTotal + '%</b> ' + (allocTotal===100 ? '✔️' : '<span style="color:#c00">⚠️ (must total 100%)</span>') + '<br></div>';
-    html += '<div style="background:#fff8e6;padding:12px;border-radius:8px"><strong>Monthly SIP split</strong><br>';
-    html += 'Large cap: ' + indianFormat(lc_sip) + '<br>';
-    html += 'Mid cap: ' + indianFormat(mc_sip) + '<br>';
-    html += 'Small cap: ' + indianFormat(sc_sip) + '<br>';
-    html += 'Gold: ' + indianFormat(gold_sip) + '<br><hr>Total SIP monthly: <b>' + indianFormat(total_sip) + '</b><br></div>';
-    html += '<div style="background:#eef9ff;padding:12px;border-radius:8px"><strong>Projection over ' + years + ' years</strong><br>';
-    html += 'Large cap FV: <b>' + indianFormat(fv_lc) + '</b> (at ' + lc_r + '% pa)<br>';
-    html += 'Mid cap FV: <b>' + indianFormat(fv_mc) + '</b> (at ' + mc_r + '% pa)<br>';
-    html += 'Small cap FV: <b>' + indianFormat(fv_sc) + '</b> (at ' + sc_r + '% pa)<br>';
-    html += 'Gold FV: <b>' + indianFormat(fv_gold) + '</b> (at ' + gold_r + '% pa)<br><hr>';
-    html += '<strong>Total projected corpus: ' + indianFormat(fv_total) + '</strong><br></div>';
-    document.getElementById('result').innerHTML = html;
+    html += '<div class="panel"><h3>Quick summary</h3>';
+    html += '<div class="small">Total income: <span class="kpi">₹' + indianFormat(totalIncome) + '</span></div>';
+    html += '<div class="small">Total expenses: <span class="kpi">₹' + indianFormat(totalExpenses) + '</span></div>';
+    html += '<div class="small">Investable per month: <span class="kpi">₹' + indianFormat(investable) + '</span></div>';
+    html += '<div class="small">Allocation total: <span class="accent-text">' + allocTotal + '%</span> ';
+    html += (allocTotal===100 ? '<span style="color:var(--success)">✔</span>' : '<span style="color:var(--danger)">⚠ (should be 100%)</span>');
+    html += '</div></div>';
+
+    html += '<div class="panel"><h3>Monthly SIP split</h3>';
+    html += '<div class="small">Large cap: <span class="kpi">₹' + indianFormat(lc_sip) + '</span></div>';
+    html += '<div class="small">Mid cap: <span class="kpi">₹' + indianFormat(mc_sip) + '</span></div>';
+    html += '<div class="small">Small cap: <span class="kpi">₹' + indianFormat(sc_sip) + '</span></div>';
+    html += '<div class="small">Gold: <span class="kpi">₹' + indianFormat(gold_sip) + '</span></div>';
+    html += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
+    html += '<div class="small">Total SIP monthly: <span class="kpi">₹' + indianFormat(total_sip) + '</span></div>';
+    html += '</div>';
+
+    html += '<div class="panel"><h3>Projection (' + years + ' yrs)</h3>';
+    html += '<div class="small">Large cap FV: <span class="kpi">₹' + indianFormat(fv_lc) + '</span> at ' + lc_r + '% p.a.</div>';
+    html += '<div class="small">Mid cap FV: <span class="kpi">₹' + indianFormat(fv_mc) + '</span> at ' + mc_r + '% p.a.</div>';
+    html += '<div class="small">Small cap FV: <span class="kpi">₹' + indianFormat(fv_sc) + '</span> at ' + sc_r + '% p.a.</div>';
+    html += '<div class="small">Gold FV: <span class="kpi">₹' + indianFormat(fv_gold) + '</span> at ' + gold_r + '% p.a.</div>';
+    html += '<hr style="margin:8px 0;border:none;border-top:1px solid #eef3fb"/>';
+    html += '<div class="small"><strong>Total projected corpus: ₹' + indianFormat(fv_total) + '</strong></div>';
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    // store last results to be used by export
+    window._plannerState = {
+      inputs: {husband,wife,house,emi,misc,lc,mc,sc,gold,lc_r,mc_r,sc_r,gold_r,years},
+      outputs: {investable,lc_sip,mc_sip,sc_sip,gold_sip,total_sip,fv_lc,fv_mc,fv_sc,fv_gold,fv_total}
+    };
   }
-  document.getElementById('calc').addEventListener('click', render);
-  render();
+
+  calcBtn.addEventListener('click', renderPlanner);
+  // auto run on load
+  renderPlanner();
+
+  /* ---------- goal planner ---------- */
+  var calcGoalBtn = document.getElementById('calcGoal');
+  calcGoalBtn.addEventListener('click', function(){
+    var FV = Number(document.getElementById('target').value||0);
+    var years = Number(document.getElementById('goalYears').value||0);
+    var cagr = Number(document.getElementById('goalCagr').value||0);
+    var infl = Number(document.getElementById('goalInfl').value||0);
+
+    var sip = required_sip_for_target(FV, cagr, years); // monthly
+    var months = years * 12;
+    var total_invested = sip * months;
+    var wealth_created = FV - total_invested;
+    var real_target = FV / Math.pow(1 + infl/100, years);
+
+    var html = '<div class="panel"><h3>Goal Planner result</h3>';
+    html += '<div class="small">Target (nominal): <span class="kpi">₹' + indianFormat(FV) + '</span></div>';
+    html += '<div class="small">Target in today\'s rupees: <span class="kpi">₹' + indianFormat(real_target) + '</span> (inflation at ' + infl + '% p.a.)</div>';
+    html += '<div class="small">Required monthly SIP: <span class="kpi">₹' + indianFormat(sip) + '</span> (for ' + years + ' years at ' + cagr + '% p.a.)</div>';
+    html += '<div class="small">Total invested: <span class="kpi">₹' + indianFormat(total_invested) + '</span></div>';
+    html += '<div class="small">Wealth (gain): <span class="kpi">₹' + indianFormat(wealth_created) + '</span></div>';
+    html += '</div>';
+    document.getElementById('goalResult').innerHTML = html;
+
+    // store for export
+    window._goalState = {
+      inputs: {FV,years,cagr,infl},
+      outputs: {sip,total_invested,wealth_created,real_target}
+    };
+  });
+
+  // run default goal calculation once
+  calcGoalBtn.click();
+
+  /* ---------- reset ---------- */
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    // reset fields to defaults
+    var defaults = {
+      husband:100000, wife:100000, house:60000, emi:20000, misc:20000,
+      lc:40, mc:30, sc:20, gold:10,
+      lc_r:11, mc_r:13, sc_r:15, gold_r:7, years:10,
+      target:10000000, goalYears:15, goalCagr:12, goalInfl:5
+    };
+    Object.keys(defaults).forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.value = defaults[id];
+    });
+    renderPlanner();
+    calcGoalBtn.click();
+  });
+
+  /* ---------- Excel export using SheetJS ---------- */
+  document.getElementById('downloadBtn').addEventListener('click', function(){
+    var planner = window._plannerState || {};
+    var goal = window._goalState || {};
+
+    // Build summary sheet data as arrays (header row then rows)
+    var summaryRows = [
+      ["Field","Value"]
+    ];
+    // planner inputs
+    var inputs = (planner.inputs || {});
+    summaryRows.push(["Husband monthly income (₹)", inputs.husband || ""]);
+    summaryRows.push(["Wife monthly income (₹)", inputs.wife || ""]);
+    summaryRows.push(["Total investable per month (₹)", (planner.outputs ? planner.outputs.investable : "")]);
+    summaryRows.push(["Allocation Large %", inputs.lc || ""]);
+    summaryRows.push(["Allocation Mid %", inputs.mc || ""]);
+    summaryRows.push(["Allocation Small %", inputs.sc || ""]);
+    summaryRows.push(["Allocation Gold %", inputs.gold || ""]);
+    summaryRows.push(["Total SIP monthly (₹)", (planner.outputs ? planner.outputs.total_sip : "")]);
+    summaryRows.push([]);
+    // planner outputs (FV)
+    summaryRows.push(["Projection years", inputs.years || ""]);
+    summaryRows.push(["Large cap FV (nominal)", (planner.outputs ? planner.outputs.fv_lc : "")]);
+    summaryRows.push(["Mid cap FV (nominal)", (planner.outputs ? planner.outputs.fv_mc : "")]);
+    summaryRows.push(["Small cap FV (nominal)", (planner.outputs ? planner.outputs.fv_sc : "")]);
+    summaryRows.push(["Gold FV (nominal)", (planner.outputs ? planner.outputs.fv_gold : "")]);
+    summaryRows.push(["Total projected corpus (nominal)", (planner.outputs ? planner.outputs.fv_total : "")]);
+
+    // Goal planner sheet
+    var goalRows = [
+      ["Field","Value"]
+    ];
+    if(goal.inputs){
+      goalRows.push(["Target Corpus (₹)", goal.inputs.FV || ""]);
+      goalRows.push(["Years to reach", goal.inputs.years || ""]);
+      goalRows.push(["Expected CAGR %", goal.inputs.cagr || ""]);
+      goalRows.push(["Inflation %", goal.inputs.infl || ""]);
+      goalRows.push([]);
+      goalRows.push(["Required monthly SIP (₹)", goal.outputs ? goal.outputs.sip : ""]);
+      goalRows.push(["Total invested (₹)", goal.outputs ? goal.outputs.total_invested : ""]);
+      goalRows.push(["Wealth (gain) (₹)", goal.outputs ? goal.outputs.wealth_created : ""]);
+      goalRows.push(["Real target (today Rs) (₹)", goal.outputs ? goal.outputs.real_target : ""]);
+    }
+
+    // convert numbers to plain numbers in arrays (SheetJS prefers numbers)
+    function normRows(rows){
+      return rows.map(function(r){
+        return r.map(function(cell){
+          if(typeof cell === 'number') return cell;
+          if(typeof cell === 'string' && cell.replace(/,/g,'').match(/^\d+(\.\d+)?$/)) return Number(cell.replace(/,/g,''));
+          return cell;
+        });
+      });
+    }
+
+    var wsSummary = XLSX.utils.aoa_to_sheet(normRows(summaryRows));
+    var wsGoal = XLSX.utils.aoa_to_sheet(normRows(goalRows));
+
+    // create workbook and append sheets
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+    XLSX.utils.book_append_sheet(wb, wsGoal, "Goal Planner");
+
+    // write as binary and download
+    var wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    var blob = new Blob([wbout], {type:"application/octet-stream"});
+    var fname = "SIP-Plan-" + (new Date()).toISOString().slice(0,10) + ".xlsx";
+    if(window.navigator && window.navigator.msSaveOrOpenBlob){
+      window.navigator.msSaveOrOpenBlob(blob, fname);
+    } else {
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = fname;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(function(){ URL.revokeObjectURL(link.href); document.body.removeChild(link); }, 3000);
+    }
+  });
+
 })();
 </script>
 </body>
 </html>
+
